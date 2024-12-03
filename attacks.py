@@ -4,6 +4,37 @@ import numpy as np
 import torch
 import datasets
 
+def get_ll(sentence, model, tokenizer, device):
+    input_ids = torch.tensor(tokenizer.encode(sentence)).unsqueeze(0)
+    input_ids = input_ids.to(device)
+    with torch.no_grad():
+        outputs = model(input_ids, labels=input_ids)
+    loss, logits = outputs[:2]
+    return get_all_prob(input_ids, loss, logits)
+
+def get_conditional_ll(input_text, target_text, model, tokenizer, device):
+    input_encodings = tokenizer(input_text, return_tensors="pt")
+    target_encodings = tokenizer(target_text, return_tensors="pt")
+    concat_ids = torch.cat((input_encodings.input_ids.to(device), target_encodings.input_ids.to(device)), dim=1)
+    labels = concat_ids.clone()
+    labels[:, : input_encodings.input_ids.size(1)] = -100
+    with torch.no_grad():
+        outputs = model(concat_ids, labels=labels)
+    loss, logits = outputs[:2]
+    return get_all_prob(labels, loss, logits)
+
+def get_all_prob(input_ids, loss, logits):
+    probabilities = torch.nn.functional.log_softmax(logits, dim=-1)
+    all_prob = []
+    input_ids_processed = input_ids[0][1:]
+    for i, token_id in enumerate(input_ids_processed):
+        probability = probabilities[0, i, token_id].item()
+        all_prob.append(probability)
+    ll = -loss.item()  # log-likelihood
+    ppl = torch.exp(loss).item()
+    prob = torch.exp(-loss).item()
+    return prob, ll , ppl, all_prob, loss.item()
+    
 class attack:
 
     def __init__(self, attack_name, num_trials):
@@ -110,6 +141,10 @@ class attack:
             self.mia_metrics = self.calculate_mia_metrics(membership_true, membership_pred)
             self.print_mia_metrics()
 
+        elif self.attack_name == 'recall':
+            print(self.attack_name)
+            
+            
         else:
     
             raise ValueError("Invalid attack was chosen!")
