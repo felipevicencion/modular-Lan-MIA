@@ -16,8 +16,14 @@ class Options():
         self.parser.add_argument("-load_model_dir", "--load-model-dir", help = "directory from which a trained model is loaded", default = None)
         self.parser.add_argument("-log_dir", "--log-dir", help = "location of the logfile", default = None)
         self.parser.add_argument("-output_dir", "--output-dir", help = "location of the output directory", default = None)     
-        # attack parameters
+        ## attack parameters
         self.parser.add_argument("-attack_name", "--attack-name", help = "name of an attack to be performed", default = "prediction_loss_based_mia")
         self.parser.add_argument("-num_trials", "--num-trials", help = "number of trials of an attack to be performed", default = 500)
+        self.parser.add_argument("-score_thr", "--score-thr", help = "threshold to be used for attacks based on scores", default = 1.1)
+        # attack: recall parameters 
+        self.parser.add_argument("-num_shots", "--num-shots", help = "attack ReCall: number of shots for prefix", default = 1)
+        self.parser.add_argument("-pass_window", "--pass-window", help = "attack ReCall: (Optional) exceed the context window", default = True)
+        self.parser.add_argument("-max_length", "--max-length", help = "attack ReCall: Maximum length of the window", default = 512)
+        self.parser.add_argument("-prefix", "--prefix", help = "attack ReCall: a prefix to be used in an attack", default = "This is a synthetic prefix!")
         # run mode parameter
         self.parser.add_argument("-run_mode", "--run-mode", help = "specifies the mode in which the package is run - 'fine-tunning' or 'attack'", default = None)

@@ -3,6 +3,7 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support, rec
 import torch
 import datasets
 import pandas as pd
+from utils import *
 
 class pretrained_models:
 
@@ -35,14 +36,14 @@ class pretrained_models:
             'recall': recall
         }
 
-    def tokenize_data(self, train_data, test_data):
+    # def tokenize_data(self, train_data, test_data):
 
-        tokenize_data = lambda batch: self.tokenizer(batch['text'], padding=True, truncation=True)
-        train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
-        test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
-        train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
-        test_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
-        return train_data, test_data
+    #     tokenize_data = lambda batch: self.tokenizer(batch['text'], padding=True, truncation=True)
+    #     train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
+    #     test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
+    #     train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
+    #     test_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
+    #     return train_data, test_data
 
     def load_model(self, train_data, test_data):
 
@@ -50,7 +51,8 @@ class pretrained_models:
         self.num_classes = len(uniques)
         self.model.config.num_labels = self.num_classes
         print(f"..num_classes = {self.num_classes}")
-        train_data, test_data = self.tokenize_data(train_data, test_data)
+        # train_data, test_data = self.tokenize_data(train_data, test_data)
+        train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data)
         try:
             model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir)
         except Exception as e:
@@ -64,7 +66,7 @@ class pretrained_models:
             train_dataset=train_data,
             eval_dataset=test_data
         )
-        return trainer, train_data, test_data
+        return trainer, model, self.tokenizer
     
     def fine_tune(self, train_data, test_data, num_epochs):
         
@@ -79,8 +81,9 @@ class pretrained_models:
         # train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
         # test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
 
-        train_data, test_data = self.tokenize_data(train_data, test_data)
-
+        # train_data, test_data = self.tokenize_data(train_data, test_data)
+        train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data)
+        
         # train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
         # test_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
 
@@ -89,7 +92,7 @@ class pretrained_models:
             output_dir = self.output_dir,
             num_train_epochs=num_epochs,
             per_device_train_batch_size = 20,
-            gradient_accumulation_steps = 16,    
+            gradient_accumulation_steps = 16,
             per_device_eval_batch_size= 8,
             eval_strategy = "epoch",
             save_strategy = "epoch",

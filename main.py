@@ -23,6 +23,11 @@ num_epochs = float(args.num_epochs)
 load_model_dir = args.load_model_dir
 attack_name = args.attack_name
 num_trials = int(args.num_trials)
+score_thr = float(args.score_thr)
+num_shots = args.num_shots
+pass_window = args.pass_window
+max_length = args.max_length
+prefix = args.prefix
 run_mode = args.run_mode
 output_dir = args.output_dir
 log_dir = args.log_dir
@@ -46,15 +51,27 @@ if run_mode == 'fine-tunning':
     print("..fine-mapping of pretrained NLP model")
     #### fine-tuning of pretrained NLP model
     wmodel = pretrained_models(model_name, max_sequence_length, load_model_dir, output_dir, log_dir)
-    trainer, train_data, test_data = wmodel.fine_tune(train_data, test_data, num_epochs)
+    trainer, train_data, tokenizer, test_data = wmodel.fine_tune(train_data, test_data, num_epochs)
 
 elif run_mode == 'attack':
     wmodel = pretrained_models(model_name, max_sequence_length, load_model_dir)
-    trainer, train_data, test_data = wmodel.load_model(train_data, test_data)
+    trainer, model, tokenizer = wmodel.load_model(train_data, test_data)
+    attack_options = {
+        'pass_window': pass_window,
+        'max_length': max_length,
+        'num_shots': num_shots,
+        'confidence_thr': 0.9,
+        'tokenizer' : tokenizer,
+        'trainer' : trainer,
+        'score_thr' : score_thr,
+        'prefix' : prefix,
+        'model' : model
+    }
+    # print(attack_options)
     print(f"..performing attack {attack_name}")
     #### performing an attack
     wattack = attack(attack_name, num_trials)
-    mia_metrics = wattack.perform_attack(trainer, train_data, test_data)
+    mia_metrics = wattack.perform_attack(train_data, test_data, attack_options)
 
 
 

@@ -26,7 +26,7 @@ python3 main.py --dataset IMDb --num-epochs 10 --attack-name prediction_loss_bas
 
 ```
 
-# Input options
+# (General) Input options
 
 | Option | Description | Default |
 | --- | --- | --- |
@@ -38,6 +38,15 @@ python3 main.py --dataset IMDb --num-epochs 10 --attack-name prediction_loss_bas
 | `--num-epochs` | number of epochs used in the fine-tuning of the model | 5 |
 | `--max-sequence-length` | maximum sequence length | 512 |
 | `--torch-num-threads` | number of CPU threads PyTorch uses for parallel operations | 1 |
+
+
+## ReCall Input options
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `--num-shots` | Number of shots for prefix | 1 |
+| `--pass-window`| (Optional) exceed the context window | True |
+| `--max-length`| Maximum length of the window | 512 |
 
 # Evaluation metrics
 
@@ -66,6 +75,7 @@ Once {num-trials} attacks are performed we summarize theit effectivness through 
 | Prediction Correctness Based MIA | `prediction_correctness_based_mia` | An attacker infers an input record as a member if it is correctly predicted by the target model, otherwise the attacker infers it as a non-member.  |
 | Prediction Loss Based MIA | `prediction_loss_based_mia` | An attacker infers an input record as a member if its prediction loss is smaller than the average loss of all training members, otherwise the attacker infers it as a nonmember. |
 | Prediction Confidence Based MIA | `prediction_confidence_based_mia` | An attacker infers an input record as a member if its maximum prediction confidence is larger than a preset threshold, otherwise the attacker infers it as a non-member |
+| ReCall | `recall` | Based on the assumption that the relative change in conditional log-likelihoods when prefixing target data points with non-target data points will be larger than the realtive change when prefixing non-target data point with non-target data points. More details can be found on [ReCall project page](https://royxie.com/recall-project-page/)  |
 
 
 
