@@ -26,4 +26,4 @@ class Options():
         self.parser.add_argument("-max_length", "--max-length", help = "attack ReCall: Maximum length of the window", default = 512)
         self.parser.add_argument("-prefix", "--prefix", help = "attack ReCall: a prefix to be used in an attack", default = "This is a synthetic prefix!")
         # run mode parameter
-        self.parser.add_argument("-run_mode", "--run-mode", help = "specifies the mode in which the package is run - 'fine-tunning' or 'attack'", default = None)
+        self.parser.add_argument("-run_mode", "--run-mode", help = "specifies the mode in which the package is run - 'fine-tunning' or 'attack'", default = 'attack)
