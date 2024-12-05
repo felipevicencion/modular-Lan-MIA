@@ -5,6 +5,7 @@ import torch
 import datasets
 from tqdm import tqdm
 from utils import *    
+from dataset import *
     
 class attack:
 
@@ -53,7 +54,9 @@ class attack:
             print(f"{metric}: {value:.4f}")
 
 
-    def perform_attack(self, train_data, test_data, attack_options):
+    def perform_attack(self, wdataset, attack_options):
+
+        train_data, test_data = wdataset.get_train_test()
 
         # attack_options is a dictionary containing additional inputs and parameters required to performa MIAs such as thresold values and other
         if self.attack_name != 'recall':
@@ -61,7 +64,6 @@ class attack:
         shf_train_data = train_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         shf_test_data = test_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
-        print(attack_dataset)
         membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
 
         if self.attack_name == 'prediction_loss_based_mia':

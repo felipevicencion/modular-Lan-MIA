@@ -4,6 +4,7 @@ import torch
 import datasets
 import pandas as pd
 from utils import *
+from dataset import *
 
 class pretrained_models:
 
@@ -36,17 +37,10 @@ class pretrained_models:
             'recall': recall
         }
 
-    # def tokenize_data(self, train_data, test_data):
+    def load_model(self, wdataset):
 
-    #     tokenize_data = lambda batch: self.tokenizer(batch['text'], padding=True, truncation=True)
-    #     train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
-    #     test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
-    #     train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
-    #     test_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
-    #     return train_data, test_data
-
-    def load_model(self, train_data, test_data):
-
+        # fetch train and test data
+        train_data, test_data = wdataset.get_train_test()
         _, uniques = pd.factorize(train_data.to_pandas()["label"])
         self.num_classes = len(uniques)
         self.model.config.num_labels = self.num_classes
@@ -68,7 +62,10 @@ class pretrained_models:
         )
         return trainer, model, self.tokenizer
     
-    def fine_tune(self, train_data, test_data, num_epochs):
+    def fine_tune(self, wdataset, num_epochs):
+
+        # fetch train and test data
+        train_data, test_data = wdataset.get_train_test()
         
         # load model and tokenizer and define length of the text sequence, number of classes
         _, uniques = pd.factorize(train_data.to_pandas()["label"])

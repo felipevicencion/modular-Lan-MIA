@@ -50,17 +50,17 @@ log_dir = args.log_dir
 print("..loading dataset")
 #### loading a dataset
 wdataset = dataset(dataset_name)
-train_data, test_data = wdataset.train_test_split(use_data_percentage)
+wdataset.train_test_split(use_data_percentage)
 
 if run_mode == 'fine-tunning':
     print("..fine-mapping of pretrained NLP model")
     #### fine-tuning of pretrained NLP model
     wmodel = pretrained_models(model_name, max_sequence_length, load_model_dir, output_dir, log_dir)
-    trainer, train_data, tokenizer, test_data = wmodel.fine_tune(train_data, test_data, num_epochs)
+    trainer, train_data, test_data = wmodel.fine_tune(wdataset, num_epochs)
 
 elif run_mode == 'attack':
     wmodel = pretrained_models(model_name, max_sequence_length, load_model_dir)
-    trainer, model, tokenizer = wmodel.load_model(train_data, test_data)
+    trainer, model, tokenizer = wmodel.load_model(wdataset)
     attack_options = {
         'pass_window': pass_window,
         'max_length': max_length,
@@ -77,7 +77,7 @@ elif run_mode == 'attack':
     print(f"..performing attack {attack_name}")
     #### performing an attack
     wattack = attack(attack_name, num_trials)
-    mia_metrics = wattack.perform_attack(train_data, test_data, attack_options)
+    mia_metrics = wattack.perform_attack(wdataset, attack_options)
 
 
 
