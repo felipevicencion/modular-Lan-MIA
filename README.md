@@ -35,13 +35,19 @@ python3 main.py --dataset IMDb --num-epochs 10 --attack-name prediction_loss_bas
 | `--model-name`| name of the pretrained NLP model | roberta-base |
 | `--max-sequence-length` | maximum sequence length | 512 |
 | `--torch-num-threads` | number of CPU threads PyTorch uses for parallel operations | 1 |
+| `--seed` | specifies a seed used for random calculations inside the package | 0 |
 
 # Fine-tuning options
+
+| Option | Description | Default |
+| --- | --- | --- |
 | `--num-epochs` | number of epochs used in the fine-tuning of the model | 5 |
-| `--use_train_percentage` | percentage of available train samples used to fine-tune the model | 100 |
+| `--use-train-percentage` | percentage of available train samples used to fine-tune the model | 100 |
 
 # Attack options
+
 | Option | Description | Default |
+| --- | --- | --- |
 | `--attack-name` | name of an attack to be performed | prediction_loss_based_mia |
 | `--num-trials` | number of trials of an attack to be performed | 500 |
 | `--load-model-dir` | directory from which a trained model is loaded | None |
@@ -53,6 +59,14 @@ python3 main.py --dataset IMDb --num-epochs 10 --attack-name prediction_loss_bas
 | `--num-shots` | Number of shots for prefix | 1 |
 | `--pass-window`| (Optional) exceed the context window | True |
 | `--max-length`| Maximum length of the window | 512 |
+
+
+## Shadow Input options
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `--num-shadow-models` | Number of shadow models to be trained | 1 |
+
 
 # Evaluation metrics
 
@@ -82,7 +96,7 @@ Once {num-trials} attacks are performed we summarize theit effectivness through 
 | Prediction Loss Based MIA[^1] | `prediction_loss_based_mia` | An attacker infers an input record as a member if its prediction loss is smaller than the average loss of all training members, otherwise the attacker infers it as a nonmember. |
 | Prediction Confidence Based MIA[^2] | `prediction_confidence_based_mia` | An attacker infers an input record as a member if its maximum prediction confidence is larger than a preset threshold, otherwise the attacker infers it as a non-member |
 | ReCall | `recall` | Based on the assumption that the relative change in conditional log-likelihoods when prefixing target data points with non-target data points will be larger than the realtive change when prefixing non-target data point with non-target data points. More details can be found on [ReCall project page](https://royxie.com/recall-project-page/)  |
-| Shadow MIA[^3] | `shadow` |  Based on training a binary classifier, which can distinguish a target model’s behavior of itstraining members from the non-members by creating multiple shadow models to mimic the behavior of the target model. Still under construction. |
+| Black-box Shadow MIA[^3] | `bb-shadow` |  Based on training a binary classifier, which can distinguish a target model’s behavior of itstraining members from the non-members by creating multiple shadow models to mimic the behavior of the target model. Still under construction. |
 
 [^1]: Samuel Yeom, Irene Giacomelli, Matt Fredrikson, and Somesh Jha. 2018. Privacy risk in machine learning: Analyzing
 the connection to overfitting. In 2018 IEEE 31st Computer Security Foundations Symposium (CSF). IEEE, 268–282.

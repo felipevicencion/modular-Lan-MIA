@@ -1,3 +1,14 @@
+import torch
+import numpy as np
+from transformers import set_seed
+
+# function that sets seed for all the libraries used
+def fix_seed(seed: int = 0):
+    torch.manual_seed(seed)
+    np.random.seed(seed)
+    set_seed(seed)
+
+# helper function for the recall attack
 def recall_process_prefix(max_length, prefix, avg_length, pass_window, total_shots, tokenizer):
     if pass_window:
         return prefix
@@ -54,7 +65,7 @@ def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device)
     loss, logits = outputs[:2]
     return recall_get_all_prob(labels, loss, logits)
 
-
+# function to tokenize train and test data
 def tokenize_data(tokenizer, train_data, test_data):
     tokenize_data = lambda batch: tokenizer(batch['text'], padding=True, truncation=True)
     train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))

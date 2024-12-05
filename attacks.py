@@ -172,6 +172,10 @@ class attack:
                 # prob_class_1_avg = np.mean(prob_class_1)
                 # # get the average probability of the negative class
                 # prob_class_0_avg = np.mean(prob_class_0)
+
+        elif self.attack_name == 'bb-shadow':
+            print(self.attack_name)
+        
         else:
     
             raise ValueError("Invalid attack was chosen!")

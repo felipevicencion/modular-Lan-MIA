@@ -120,7 +120,5 @@ class pretrained_models:
 
         train_res = trainer.train()
         print("..train ended")
-        # eval_res = trainer.evaluate()
-        # print("..eval ended")
 
         return trainer, train_data, test_data

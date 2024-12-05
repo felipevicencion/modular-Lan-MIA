@@ -7,6 +7,7 @@ import torch
 import datasets
 import os
 from options import *
+from utils import *
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Parsing input arguments and initilizing variables
@@ -18,8 +19,11 @@ dataset_name = args.dataset
 torch_num_threads = int(args.torch_num_threads)
 torch.set_num_threads(torch_num_threads) 
 max_sequence_length = int(args.max_sequence_length)
+seed = int(args.seed)
+fix_seed(seed)
 model_name = args.model_name
 num_epochs = float(args.num_epochs)
+use_data_percentage = int(args.use_data_percentage)
 load_model_dir = args.load_model_dir
 attack_name = args.attack_name
 num_trials = int(args.num_trials)
@@ -28,6 +32,7 @@ num_shots = args.num_shots
 pass_window = args.pass_window
 max_length = args.max_length
 prefix = args.prefix
+num_shadow_models = int(args.num_shadow_models)
 run_mode = args.run_mode
 output_dir = args.output_dir
 log_dir = args.log_dir
@@ -45,7 +50,7 @@ log_dir = args.log_dir
 print("..loading dataset")
 #### loading a dataset
 wdataset = dataset(dataset_name)
-train_data, test_data = wdataset.train_test_split()
+train_data, test_data = wdataset.train_test_split(use_data_percentage)
 
 if run_mode == 'fine-tunning':
     print("..fine-mapping of pretrained NLP model")
@@ -65,7 +70,8 @@ elif run_mode == 'attack':
         'trainer' : trainer,
         'score_thr' : score_thr,
         'prefix' : prefix,
-        'model' : model
+        'model' : model,
+        'num_shadow_models' : num_shadow_models
     }
     # print(attack_options)
     print(f"..performing attack {attack_name}")
