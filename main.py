@@ -1,10 +1,8 @@
 from dataset import dataset
 from model_train import *
 from attacks import *
-import transformers 
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, recall_score, f1_score, accuracy_score
 import torch
-import datasets
+# import datasets
 import os
 from options import *
 from utils import *

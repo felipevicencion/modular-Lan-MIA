@@ -1,6 +1,6 @@
 import transformers 
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support, recall_score, f1_score, accuracy_score
-import torch
+# import torch
 import datasets
 import pandas as pd
 from utils import *
@@ -19,26 +19,37 @@ class pretrained_models:
         self.output_dir = model_options['output_dir']
         self.log_dir = model_options['log_dir']
         self.load_model_dir = model_options['load_model_dir']
+        self.use_float16 = model_options['use_float16']
+        self.task = model_options['task']
         # self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
         # self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
-        self.load_specific_model(self.use_float16)
+        self.load_specific_model()
+        if self.task == 'generative':
+            self.model.eval()
         
-    def load_specific_model(use_float16=False):
+    def load_specific_model(self):
+        print(f"loading {self.task} model: {self.model_name}")
         if "roberta" in self.model_name:
             self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
             self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
         elif "mamba" in self.model_name:
             self.model = transformers.MambaForCausalLM.from_pretrained(
                 self.model_name, return_dict=True, trust_remote_code=True,
-                torch_dtype=torch.float16 if use_float16 else torch.float32,
+                torch_dtype=torch.float16 if self.use_float16 else torch.float32,
                 device_map="cuda:0"
             )
+            self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
         else:
+            # model_name = "EleutherAI/pythia-70m-deduped"
             self.model = transformers.AutoModelForCausalLM.from_pretrained(
-                self.model_name, return_dict=True, trust_remote_code=True,
-                torch_dtype=torch.float16 if use_float16 else torch.float32,
-                device_map="auto"
-            )
+              self.model_name, return_dict=True, trust_remote_code=True, 
+                torch_dtype=torch.float16 if self.use_float16 else torch.float32
+            )    
+            self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
+            # piece of code for testing the code above
+            # inputs = self.tokenizer("Hello, square root of -4 is", return_tensors="pt")
+            # tokens = self.model.generate(**inputs, max_length=30, num_return_sequences=1)
+            # print(self.tokenizer.decode(tokens[0]))
 
     def compute_metrics(self, pred):
         labels = pred.label_ids
