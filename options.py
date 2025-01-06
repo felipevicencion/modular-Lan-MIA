@@ -27,7 +27,7 @@ class Options():
         ## attack parameters
         self.parser.add_argument("-attack_name", "--attack-name", help = "name of an attack to be performed", default = "prediction_loss_based_mia")
         self.parser.add_argument("-num_trials", "--num-trials", help = "number of trials of an attack to be performed", default = 500)
-        self.parser.add_argument("-score_thr", "--score-thr", help = "threshold to be used for attacks based on scores", default = 1.1)
+        self.parser.add_argument("-score_thr", "--score-thr", help = "threshold to be used for attacks based on scores", default = 1.002)
         # attack: recall parameters 
         self.parser.add_argument("-num_shots", "--num-shots", help = "attack ReCall: number of shots for prefix", default = 1)
         self.parser.add_argument("-pass_window", "--pass-window", help = "attack ReCall: (Optional) exceed the context window", default = True)

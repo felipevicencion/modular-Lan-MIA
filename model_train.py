@@ -21,76 +21,83 @@ class pretrained_models:
         self.load_model_dir = model_options['load_model_dir']
         self.use_float16 = model_options['use_float16']
         self.task = model_options['task']
-        # self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
-        # self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
         self.load_specific_model()
         if self.task == 'generative':
             self.model.eval()
         
     def load_specific_model(self):
-        print(f"loading {self.task} model: {self.model_name}")
-        if "roberta" in self.model_name:
-            self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
-            self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
-        elif "mamba" in self.model_name:
-            self.model = transformers.MambaForCausalLM.from_pretrained(
-                self.model_name, return_dict=True, trust_remote_code=True,
-                torch_dtype=torch.float16 if self.use_float16 else torch.float32,
-                device_map="cuda:0"
-            )
-            self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
-        else:
-            # model_name = "EleutherAI/pythia-70m-deduped"
-            self.model = transformers.AutoModelForCausalLM.from_pretrained(
-              self.model_name, return_dict=True, trust_remote_code=True, 
-                torch_dtype=torch.float16 if self.use_float16 else torch.float32
-            )    
-            self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
-            # piece of code for testing the code above
-            # inputs = self.tokenizer("Hello, square root of -4 is", return_tensors="pt")
-            # tokens = self.model.generate(**inputs, max_length=30, num_return_sequences=1)
-            # print(self.tokenizer.decode(tokens[0]))
+        if self.task == 'classification':
+            try:
+                self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir)
+                self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
+            except Exception as e:
+                print(f"Error: {e}")
+                print("Ensure you are using the correct directory for loading the model.")
+                print(f"..model {model} is loaded")
+        elif self.task == 'generative':
+            print(f"..loading {self.task} model: {self.model_name}")
+            if "roberta" in self.model_name:
+                self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
+                self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
+            elif "mamba" in self.model_name:
+                self.model = transformers.MambaForCausalLM.from_pretrained(
+                    self.model_name, return_dict=True, trust_remote_code=True,
+                    torch_dtype=torch.float16 if self.use_float16 else torch.float32,
+                    device_map="cuda:0"
+                )
+                self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+            else:
+                # model_name = "EleutherAI/pythia-70m-deduped"
+                self.model = transformers.AutoModelForCausalLM.from_pretrained(
+                  self.model_name, return_dict=True, trust_remote_code=True, 
+                    torch_dtype=torch.float16 if self.use_float16 else torch.float32
+                )    
+                self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
+                self.tokenizer.pad_token = self.tokenizer.eos_token
+                # piece of code for testing the code above
+                # inputs = self.tokenizer("Hello, square root of -4 is", return_tensors="pt")
+                # tokens = self.model.generate(**inputs, max_length=30, num_return_sequences=1)
+                # print(self.tokenizer.decode(tokens[0]))
 
-    def compute_metrics(self, pred):
-        labels = pred.label_ids
-        preds = pred.predictions.argmax(-1)
-        if self.num_classes == 2:
-            average_opt = 'binary'
-        else:
-            average_opt = 'micro'
-        precision, recall, f1, _ = precision_recall_fscore_support(labels, preds, average=average_opt)
-        acc = accuracy_score(labels, preds)
-        return {
-            'accuracy': acc,
-            'f1': f1,
-            'precision': precision,
-            'recall': recall
-        }
-
-    def load_prepare_model(self, wdataset):
+    def prepare_model(self, wdataset):
 
         # fetch train and test data
         train_data, test_data = wdataset.get_train_test()
-        _, uniques = pd.factorize(train_data.to_pandas()["label"])
-        self.num_classes = len(uniques)
-        self.model.config.num_labels = self.num_classes
-        print(f"..num_classes = {self.num_classes}")
-        # train_data, test_data = self.tokenize_data(train_data, test_data)
-        train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data)
-        try:
-            model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir)
-        except Exception as e:
-            print(f"Error: {e}")
-            print("Ensure you are using the correct directory for loading the model.")
-            print(f"..model {model} is loaded")
- 
+        if self.task == 'classification':
+            _, uniques = pd.factorize(train_data.to_pandas()["label"])
+            self.num_classes = len(uniques)
+            self.model.config.num_labels = self.num_classes
+            print(f"..num_classes = {self.num_classes}")
+            
+        train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data, self.max_sequence_length)
+
         trainer = transformers.Trainer(
-            model=model,
+            model=self.model,
             compute_metrics=self.compute_metrics,
             train_dataset=train_data,
             eval_dataset=test_data
         )
-        return trainer, model, self.tokenizer
+        return trainer, self.model, self.tokenizer
+
+    def compute_metrics(self, pred):
+        if self.task == 'classification':
+            labels = pred.label_ids
+            preds = pred.predictions.argmax(-1)
+            if self.num_classes == 2:
+                average_opt = 'binary'
+            else:
+                average_opt = 'micro'
+            precision, recall, f1, _ = precision_recall_fscore_support(labels, preds, average=average_opt)
+            acc = accuracy_score(labels, preds)
+            return {
+                'accuracy': acc,
+                'f1': f1,
+                'precision': precision,
+                'recall': recall
+            }
+        else:
+            return {}
     
     def fine_tune(self, wdataset, num_epochs):
 

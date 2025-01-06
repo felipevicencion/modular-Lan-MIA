@@ -136,21 +136,29 @@ class attack:
                     break
                 # avg_length = int(np.mean([len(self.tokenizer.encode(ex["input_ids"])) for ex in attack_dataset])) 
                 avg_length = int(np.mean([len(ex["text"]) for ex in attack_dataset])) 
+                print(avg_length)
                 prefix = recall_process_prefix(self.max_length, self.prefix, avg_length, self.pass_window, self.num_shots, self.tokenizer) 
-            for ex in tqdm(attack_dataset):
+                print(f"prefix = {prefix}")
+            membership_pred = torch.zeros(2*self.num_trials_per_cat)
+            for ind_ex, ex in enumerate(tqdm(attack_dataset)):
                 pred = {}
                 # unconditional log-likelihood
                 ll = recall_get_ll(ex["text"], self.model, self.tokenizer, self.device)[1]
+                print(f"ll = {ll}")
                 # ReCaLL
+                recall_score = 0
                 if int(self.num_shots) != 0:   
                     # conditional log-likelihood with prefix     
                     ll_nonmember = recall_get_conditional_ll("".join(self.prefix), ex["text"], self.model, self.tokenizer, self.device)[1]
+                    print(f"ll_nonmember={ll_nonmember}")
                     recall_score = ll_nonmember / ll
                     if np.isnan(ll_nonmember / ll).all():
                         recall_score = 0
-                membership_pred = torch.tensor( (recall_score >= self.score_thr).astype(int) )
-                self.mia_metrics = self.calculate_mia_metrics(membership_true, membership_pred)
-                self.print_mia_metrics()
+                # membership_pred = torch.tensor( (recall_score >= self.score_thr).astype(int) )                
+                # membership_pred = torch.tensor(int(recall_score >= self.score_thr))
+                membership_pred[ind_ex] = int(recall_score >= self.score_thr)
+            self.mia_metrics = self.calculate_mia_metrics(membership_true, membership_pred)
+            self.print_mia_metrics()
 
                 # answers = []
                 # predictions = []

@@ -56,7 +56,7 @@ def recall_get_ll(sentence, model, tokenizer, device):
 
 def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device):
     input_encodings = tokenizer(input_text, return_tensors="pt")
-    # target_encodings = tokenizer(target_text, return_tensors="pt")
+    target_encodings = tokenizer(target_text, return_tensors="pt")
     concat_ids = torch.cat((input_encodings.input_ids.to(device), target_encodings.input_ids.to(device)), dim=1)
     labels = concat_ids.clone()
     labels[:, : input_encodings.input_ids.size(1)] = -100
@@ -66,8 +66,8 @@ def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device)
     return recall_get_all_prob(labels, loss, logits)
 
 # function to tokenize train and test data
-def tokenize_data(tokenizer, train_data, test_data):
-    tokenize_data = lambda batch: tokenizer(batch['text'], padding=True, truncation=True)
+def tokenize_data(tokenizer, train_data, test_data, max_sequence_length):
+    tokenize_data = lambda batch: tokenizer(batch['text'], max_length=max_sequence_length, padding=True, truncation=True)
     train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
     test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
     train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])

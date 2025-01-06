@@ -46,7 +46,7 @@ log_dir = args.log_dir
 # log_dir = '/nfs/scistore17/robingrp/adepope/DataExtractionAttacks/logfiles'
 # output_dir = '/nfs/scistore17/robingrp/adepope/DataExtractionAttacks/output'
 
-print("..loading dataset")
+print(f"..loading dataset {dataset_name}")
 #### loading a dataset
 wdataset = dataset(dataset_name)
 wdataset.train_test_split(use_data_percentage)
@@ -71,7 +71,7 @@ if run_mode == 'fine-tunning':
 elif run_mode == 'attack':
     # wmodel = pretrained_models(model_name, task, max_sequence_length, load_model_dir)
     wmodel = pretrained_models(model_options)
-    trainer, model, tokenizer = wmodel.load_prepare_model(wdataset)
+    trainer, model, tokenizer = wmodel.prepare_model(wdataset)
     attack_options = {
         'pass_window': pass_window,
         'max_length': max_length,
