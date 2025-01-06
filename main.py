@@ -12,16 +12,17 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Parsing input arguments and initilizing variables
 
-
 args = Options()
 args = args.parser.parse_args()
-dataset_name = args.dataset 
+dataset_name = args.dataset
+task = args.task
 torch_num_threads = int(args.torch_num_threads)
 torch.set_num_threads(torch_num_threads) 
 max_sequence_length = int(args.max_sequence_length)
 seed = int(args.seed)
 fix_seed(seed)
 model_name = args.model_name
+use_float16 = bool(args.use_float16)
 num_epochs = float(args.num_epochs)
 use_data_percentage = int(args.use_data_percentage)
 load_model_dir = args.load_model_dir
@@ -52,15 +53,27 @@ print("..loading dataset")
 wdataset = dataset(dataset_name)
 wdataset.train_test_split(use_data_percentage)
 
+model_options = {
+    'model_name': model_name,
+    'task': task,
+    'max_sequence_length': max_sequence_length,
+    'use_float16': use_float16,
+    'load_model_dir': load_model_dir,
+    'output_dir': output_dir,
+    'log_dir' : log_dir
+}
+
 if run_mode == 'fine-tunning':
     print("..fine-mapping of pretrained NLP model")
     #### fine-tuning of pretrained NLP model
-    wmodel = pretrained_models(model_name, max_sequence_length, load_model_dir, output_dir, log_dir)
+    # wmodel = pretrained_models(model_name, task, max_sequence_length, load_model_dir, output_dir, log_dir)
+    wmodel = pretrained_models(model_options)
     trainer, train_data, test_data = wmodel.fine_tune(wdataset, num_epochs)
 
 elif run_mode == 'attack':
-    wmodel = pretrained_models(model_name, max_sequence_length, load_model_dir)
-    trainer, model, tokenizer = wmodel.load_model(wdataset)
+    # wmodel = pretrained_models(model_name, task, max_sequence_length, load_model_dir)
+    wmodel = pretrained_models(model_options)
+    trainer, model, tokenizer = wmodel.load_prepare_model(wdataset)
     attack_options = {
         'pass_window': pass_window,
         'max_length': max_length,

@@ -33,6 +33,7 @@ python3 main.py --dataset IMDb --num-epochs 10 --attack-name prediction_loss_bas
 | `--run-mode` | specifies the modality in which the library is used - either 'fine-tunning' or 'attack'| attack |
 | `--dataset` | specifies a dataset on which an attack or fine-tunning is to be performed | IMDb |
 | `--model-name`| name of the pretrained NLP model | roberta-base |
+| `--task`| descibes the task which a model was trained for: 'classification' or 'generative' | classification |
 | `--max-sequence-length` | maximum sequence length | 512 |
 | `--torch-num-threads` | number of CPU threads PyTorch uses for parallel operations | 1 |
 | `--seed` | specifies a seed used for random calculations inside the package | 0 |
@@ -42,7 +43,7 @@ python3 main.py --dataset IMDb --num-epochs 10 --attack-name prediction_loss_bas
 | Option | Description | Default |
 | --- | --- | --- |
 | `--num-epochs` | number of epochs used in the fine-tuning of the model | 5 |
-| `--use-train-percentage` | percentage of available train samples used to fine-tune the model | 100 |
+| `--use-data-percentage` | percentage of available train samples used to fine-tune the model | 100 |
 
 # Attack options
 
@@ -88,6 +89,8 @@ Once {num-trials} attacks are performed we summarize theit effectivness through 
 | Model name | Description |
 | --- | --- |
 | `roberta-base` | RoBERTa-base model is a pre-trained transformer model designed for natural language understanding tasks. It builds on BERT by using larger datasets, training for longer time, removing next-sentence prediction objective and by training with dynamic masking.
+
+It supports a number of generative models that can be loaded using `transformers.AutoModelForCausalLM.from_pretrained`. These include GPT-style autoregressive models models like GPT-2, GPT-Neo, GPT-J, and GPT-NeoX-20B, but also supports Meta’s LLaMA models and the multilingual Bloom model as well as Falcon-7B, Falcon-40B, Meta’s OPT series, Pythia etc.
 
 # Covered attacks
 | Attack name | Keyword | Description |

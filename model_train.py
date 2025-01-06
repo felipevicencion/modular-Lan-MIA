@@ -5,22 +5,41 @@ import datasets
 import pandas as pd
 from utils import *
 from dataset import *
+# from accelerate import Accelerator
 
 class pretrained_models:
 
-    def __init__(self, model_name, max_sequence_length, load_model_dir, output_dir=None, log_dir=None):
+    def __init__(self, model_options):
         # model_name = 'roberta_base'
         # max_sequence_length = 512
         # log_dir = '/nfs/scistore17/robingrp/adepope/DataExtractionAttacks/logfiles'
         # output_dir = '/nfs/scistore17/robingrp/adepope/DataExtractionAttacks/output'
-        self.model_name = model_name
-        self.max_sequence_length = max_sequence_length
-        self.output_dir = output_dir
-        self.log_dir = log_dir
-        self.load_model_dir = load_model_dir
-        self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
-        self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
-    
+        self.model_name = model_options['model_name']
+        self.max_sequence_length = model_options['max_sequence_length']
+        self.output_dir = model_options['output_dir']
+        self.log_dir = model_options['log_dir']
+        self.load_model_dir = model_options['load_model_dir']
+        # self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
+        # self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
+        self.load_specific_model(self.use_float16)
+        
+    def load_specific_model(use_float16=False):
+        if "roberta" in self.model_name:
+            self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
+            self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
+        elif "mamba" in self.model_name:
+            self.model = transformers.MambaForCausalLM.from_pretrained(
+                self.model_name, return_dict=True, trust_remote_code=True,
+                torch_dtype=torch.float16 if use_float16 else torch.float32,
+                device_map="cuda:0"
+            )
+        else:
+            self.model = transformers.AutoModelForCausalLM.from_pretrained(
+                self.model_name, return_dict=True, trust_remote_code=True,
+                torch_dtype=torch.float16 if use_float16 else torch.float32,
+                device_map="auto"
+            )
+
     def compute_metrics(self, pred):
         labels = pred.label_ids
         preds = pred.predictions.argmax(-1)
@@ -37,7 +56,7 @@ class pretrained_models:
             'recall': recall
         }
 
-    def load_model(self, wdataset):
+    def load_prepare_model(self, wdataset):
 
         # fetch train and test data
         train_data, test_data = wdataset.get_train_test()
@@ -111,9 +130,7 @@ class pretrained_models:
             eval_dataset=test_data
         )
 
-        device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        print(f"device = {device}")
-        self.model.to(device)
+        print(f"device = {training_args.device}")
 
         train_res = trainer.train()
         print("..train ended")
