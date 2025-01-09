@@ -6,6 +6,7 @@ import datasets
 from tqdm import tqdm
 from utils import *    
 from dataset import *
+import zlib
     
 class attack:
 
@@ -59,8 +60,8 @@ class attack:
         train_data, test_data = wdataset.get_train_test()
 
         # attack_options is a dictionary containing additional inputs and parameters required to performa MIAs such as thresold values and other
-        if self.attack_name != 'recall':
-            train_data, test_data = tokenize_data(attack_options['tokenizer'], train_data, test_data)
+        if self.attack_name not in ['recall', 'zlib']:
+            train_data, test_data = tokenize_data(attack_options['tokenizer'], train_data, test_data, attack_options['max_sequence_length'])
         shf_train_data = train_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         shf_test_data = test_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
@@ -120,14 +121,16 @@ class attack:
             self.mia_metrics = self.calculate_mia_metrics(membership_true, membership_pred)
             self.print_mia_metrics()
 
+        elif self.attack_name == 'bb-shadow':
+            print(self.attack_name)
+
         elif self.attack_name == 'recall':
             self.prefix = attack_options['prefix']
             self.model = attack_options['model']
             self.score_thr = attack_options['score_thr']
             self.max_length = attack_options['max_length']
             self.num_shots = attack_options['num_shots']
-            device = 'cuda' if torch.cuda.is_available() else 'cpu'
-            self.device = device
+            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
             self.pass_window = attack_options['pass_window']
             self.tokenizer = attack_options['tokenizer']
             if int(self.num_shots) != 0:  
@@ -136,14 +139,13 @@ class attack:
                     break
                 # avg_length = int(np.mean([len(self.tokenizer.encode(ex["input_ids"])) for ex in attack_dataset])) 
                 avg_length = int(np.mean([len(ex["text"]) for ex in attack_dataset])) 
-                print(avg_length)
+                print(f"avg_length={avg_length}")
                 prefix = recall_process_prefix(self.max_length, self.prefix, avg_length, self.pass_window, self.num_shots, self.tokenizer) 
                 print(f"prefix = {prefix}")
             membership_pred = torch.zeros(2*self.num_trials_per_cat)
             for ind_ex, ex in enumerate(tqdm(attack_dataset)):
-                pred = {}
-                # unconditional log-likelihood
-                ll = recall_get_ll(ex["text"], self.model, self.tokenizer, self.device)[1]
+                # unconditional log-likelihood calculation
+                ll = get_ll(ex["text"], self.model, self.tokenizer, self.device)[1]
                 print(f"ll = {ll}")
                 # ReCaLL
                 recall_score = 0
@@ -153,43 +155,30 @@ class attack:
                     print(f"ll_nonmember={ll_nonmember}")
                     recall_score = ll_nonmember / ll
                     if np.isnan(ll_nonmember / ll).all():
-                        recall_score = 0
-                # membership_pred = torch.tensor( (recall_score >= self.score_thr).astype(int) )                
+                        recall_score = 0              
                 # membership_pred = torch.tensor(int(recall_score >= self.score_thr))
                 membership_pred[ind_ex] = int(recall_score >= self.score_thr)
             self.mia_metrics = self.calculate_mia_metrics(membership_true, membership_pred)
             self.print_mia_metrics()
 
-                # answers = []
-                # predictions = []
-                # for ex in tqdm(attack_dataset):
-                #     answers.append(ex["label"])
-                #     for metric in ex["pred"].keys():
-                #         predictions.append(ex["recall"])
-                #         # if the metric is all nan, then just append 0 to it to avoid error
-                #         if np.isnan(ex["recall"]).all():
-                #             predictions[-1] = 0
-                # predictions = np.clip(predictions, -np.finfo(np.float64).max, np.finfo(np.float64).max)
-                # # get the probability of the positive class based on label=1 in answers list
-                # prob_class_1 = [
-                #     pred for pred, label in zip(predictions, answers) if label == 1
-                # ]
-                # # get the probability of the negative class based on label=0 in answers list
-                # prob_class_0 = [
-                #     pred for pred, label in zip(predictions, answers) if label == 0
-                # ]
-                # # get the average probability of the positive class
-                # prob_class_1_avg = np.mean(prob_class_1)
-                # # get the average probability of the negative class
-                # prob_class_0_avg = np.mean(prob_class_0)
-
-        elif self.attack_name == 'bb-shadow':
-            print(self.attack_name)
-        
+        elif self.attack_name == 'zlib':
+            self.model = attack_options['model']
+            self.score_thr = attack_options['score_thr']
+            self.max_length = attack_options['max_length']
+            self.tokenizer = attack_options['tokenizer']
+            self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            membership_pred = torch.zeros(2*self.num_trials_per_cat)
+            for ind_ex, ex in enumerate(tqdm(attack_dataset)):
+                ll = get_ll(ex["text"], self.model, self.tokenizer, self.device)[1]
+                zlib_score = ll / len(zlib.compress(bytes(ex["text"], "utf-8")))
+                # print(f"zlib_score = {zlib_score}")
+                membership_pred[ind_ex] = int(zlib_score >= self.score_thr)
+            self.mia_metrics = self.calculate_mia_metrics(membership_true, membership_pred)
+            self.print_mia_metrics()
+            
         else:
     
             raise ValueError("Invalid attack was chosen!")
-
 
         return self.mia_metrics
 

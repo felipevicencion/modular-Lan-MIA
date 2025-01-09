@@ -43,12 +43,9 @@ def recall_get_all_prob(input_ids, loss, logits):
     prob = torch.exp(-loss).item()
     return prob, ll , ppl, all_prob, loss.item()
 
-def recall_get_ll(sentence, model, tokenizer, device):
-    print(sentence)
-    print(tokenizer.encode(sentence))
+def get_ll(sentence, model, tokenizer, device):
     input_ids = torch.tensor(tokenizer.encode(sentence)).unsqueeze(0)
     input_ids = input_ids.to(device)
-    print(input_ids)
     with torch.no_grad():
         outputs = model(input_ids, labels=input_ids)
     loss, logits = outputs[:2]
