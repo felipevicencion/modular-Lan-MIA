@@ -73,6 +73,7 @@ elif run_mode == 'attack':
     wmodel = pretrained_models(model_options)
     trainer, model, tokenizer = wmodel.prepare_model(wdataset)
     attack_options = {
+        'load_model_dir': load_model_dir,
         'pass_window': pass_window,
         'max_length': max_length,
         'num_shots': num_shots,

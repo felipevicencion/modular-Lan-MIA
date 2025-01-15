@@ -2,6 +2,65 @@ import torch
 import numpy as np
 from transformers import set_seed
 
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+
+class FlexibleBinaryClassifier(nn.Module):
+    def __init__(self, layer_sizes):
+        super(FlexibleBinaryClassifier, self).__init__()
+        layers = []
+        
+        for i in range(len(layer_sizes) - 1):
+            layers.append(torch.nn.Linear(layer_sizes[i], layer_sizes[i + 1])) 
+            if i < len(layer_sizes) - 2:
+                layers.append(nn.ReLU())
+        
+        layers.append(torch.nn.Sigmoid())
+    
+        self.model = torch.nn.Sequential(*layers)
+    
+    def forward(self, x):
+        return self.model(x)
+
+def train_binary_classifier(layer_sizes, X_train, y_train, num_epochs=10, batch_size=16, learning_rate=0.001):
+    model = FlexibleBinaryClassifier(layer_sizes)
+
+    criterion = torch.nn.BCELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+    dataset = torch.utils.data.TensorDataset(X_train, y_train)
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+
+    for epoch in range(num_epochs):
+        model.train()
+        running_loss = 0.0
+        
+        for inputs, labels in dataloader:
+            optimizer.zero_grad() 
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+        
+        print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss / len(dataloader)}")
+
+    return model
+
+    # example of usage of train_binary_classifier:
+    # layer_sizes = [5, 10, 5, 1] 
+    # model = train_binary_classifier(layer_sizes, X_train, y_train, num_epochs=10, batch_size=16, learning_rate=0.001)
+    # model.eval()
+    # new_sample = torch.randn(1, 5) 
+    # with torch.no_grad():
+    #     prediction = model(new_sample)
+    #     print(f"Predicted probability: {prediction.item():.4f}")
+    #     predicted_class = (prediction >= 0.5).float()
+    #     print(f"Predicted class: {predicted_class.item()}")
+
+
 # function that sets seed for all the libraries used
 def fix_seed(seed: int = 0):
     torch.manual_seed(seed)
