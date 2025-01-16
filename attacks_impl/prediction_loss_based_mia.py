@@ -5,7 +5,10 @@ from attacks import *
 
 class attack_prediction_loss_based_mia(metric_attack):
 
-    def run_attack(attack_dataset, membership_true, attack_options):
+    def __init__(self, attack_name, num_trials):
+        super().__init__(attack_name, num_trials)
+
+    def run_attack(self, attack_dataset, membership_true, attack_options):
         # find average loss over iterations and over samples
         # log_history = trainer.state.log_history
         # training_loss = [entry['loss'] for entry in log_history if 'loss' in entry]

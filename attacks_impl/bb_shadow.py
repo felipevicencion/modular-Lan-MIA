@@ -1,8 +1,14 @@
 import torch 
+import sys
+sys.path.insert(0, '..')
+from attacks import *
 
 class attack_bb_shadow_attack(shadow_attack):
 
-    def run_attack(attack_dataset, membership_true, attack_options):
+    def __init__(self, attack_name, num_trials):
+        super().__init__(attack_name, num_trials)
+
+    def run_attack(self, attack_dataset, membership_true, attack_options):
         self.num_shadow_models = attack_options['num_shadow_models']
         num_classes = model(self.shadow_datasets[0][0][0]).shape[1]
         logits = torch.empty((0, num_classes))

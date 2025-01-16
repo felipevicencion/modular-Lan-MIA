@@ -1,8 +1,14 @@
 import torch
+import sys
+sys.path.insert(0, '..')
+from attacks import *
 
 class attack_prediction_correctness_based_mia(metric_attack):
 
-    def run_attack(attack_dataset, membership_true, attack_options):
+    def __init__(self, attack_name, num_trials):
+        super().__init__(attack_name, num_trials)
+
+    def run_attack(self, attack_dataset, membership_true, attack_options):
         trainer = attack_options['trainer']
         predictions_output = trainer.predict(attack_dataset)
         predictions = predictions_output.predictions

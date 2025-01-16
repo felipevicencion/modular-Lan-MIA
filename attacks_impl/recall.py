@@ -1,8 +1,14 @@
 import torch 
+import sys
+sys.path.insert(0, '..')
+from attacks import *
 
 class attack_recall():
 
-    def run_attack(attack_dataset, membership_true, attack_options):
+    def __init__(self, attack_name, num_trials):
+        super().__init__(attack_name, num_trials)
+
+    def run_attack(self, attack_dataset, membership_true, attack_options):
         self.prefix = attack_options['prefix']
         self.model = attack_options['model']
         self.score_thr = attack_options['score_thr']

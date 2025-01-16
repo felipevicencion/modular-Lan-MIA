@@ -102,6 +102,47 @@ It supports a number of generative models that can be loaded using `transformers
 | Black-box Shadow MIA[^3] | `bb-shadow` |  Based on training a binary classifier, which can distinguish a target model’s behavior of itstraining members from the non-members by creating multiple shadow models to mimic the behavior of the target model. Still under construction. |
 | Zlib Entropy MIA[^4] | `zlib` | The Zlib Entropy normalizes the target model’s loss using the zlib compression size of the input sample and decides on membership by comapring to a threshod. |
 
+# Adding a custom attack to the framework
+
+Every embedded attack should be an instance of either `shadow_attack` or `metric_attack` class and must implement all the required operations. It should be place in `attacks_impl` subdirectory within the many repository alongside other implemented attacks. Currently, all attacks require only one implemented function with definition `run_attack(self, attack_dataset, membership_true, attack_options)`, where
+
+| Parameter        | Description                                                                                                           |
+|------------------|-----------------------------------------------------------------------------------------------------------------------|
+| `attack_dataset` | A dataset of format supported by library `dataset` that combines members and non-members data for attack evaluation.  |
+| `membership_true`| A torch vector indicating membership status: 1 for member, 0 for non-member.                                          |
+| `attack_options` | A dictionary of parameters used to configure the attack depending information needed for a particular attack.         |
+
+and should load the `attacks` library in the parental folder.
+
+In the continuation of this chapter, we provide an example of implmentation for one of the available attacks called _zlib_:
+
+```
+import torch 
+import sys
+sys.path.insert(0, '..')
+from attacks import *
+
+class attack_zlib(metric_attack):
+
+    def __init__(self, attack_name, num_trials):
+        super().__init__(attack_name, num_trials)
+
+    def run_attack(self, attack_dataset, membership_true, attack_options):
+        self.model = attack_options['model']
+        self.score_thr = attack_options['score_thr']
+        self.max_length = attack_options['max_length']
+        self.tokenizer = attack_options['tokenizer']
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
+        for ind_ex, ex in enumerate(tqdm(attack_dataset)):
+            ll = get_ll(ex["text"], self.model, self.tokenizer, self.device)[1]
+            zlib_score = ll / len(zlib.compress(bytes(ex["text"], "utf-8")))
+            # print(f"zlib_score = {zlib_score}")
+            self.membership_pred[ind_ex] = int(zlib_score >= self.score_thr)
+```
+
+
+
 [^1]: Samuel Yeom, Irene Giacomelli, Matt Fredrikson, and Somesh Jha. 2018. Privacy risk in machine learning: Analyzing
 the connection to overfitting. In 2018 IEEE 31st Computer Security Foundations Symposium (CSF). IEEE, 268–282.
 [^2]: Ahmed Salem, Yang Zhang, Mathias Humbert, Mario Fritz, and Michael Backes. 2019. ML-Leaks: Model and Data

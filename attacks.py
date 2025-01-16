@@ -66,7 +66,7 @@ class attack:
         attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
         membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
         self.run_attack(attack_dataset, membership_true, attack_options)
-        self.mia_metrics = self.calculate_mia_metrics(membership_true, membership_pred)
+        self.mia_metrics = self.calculate_mia_metrics(membership_true, self.membership_pred)
         self.print_mia_metrics()
         return self.mia_metrics
 

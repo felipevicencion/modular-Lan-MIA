@@ -5,7 +5,10 @@ from attacks import *
 
 class attack_zlib(metric_attack):
 
-    def run_attack(attack_dataset, membership_true, attack_options):
+    def __init__(self, attack_name, num_trials):
+        super().__init__(attack_name, num_trials)
+
+    def run_attack(self, attack_dataset, membership_true, attack_options):
         self.model = attack_options['model']
         self.score_thr = attack_options['score_thr']
         self.max_length = attack_options['max_length']
