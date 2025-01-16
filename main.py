@@ -6,6 +6,8 @@ import torch
 import os
 from options import *
 from utils import *
+from attacks_impl import *
+import importlib
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Parsing input arguments and initilizing variables
@@ -89,7 +91,13 @@ elif run_mode == 'attack':
     # print(attack_options)
     print(f"..performing attack {attack_name}")
     #### performing an attack
-    wattack = attack(attack_name, num_trials)
+    # attack_class = globals().get(f"attack_{attack_name}")
+    # module_name = "attacks_impl.zlib"
+    attack_class = importlib.import_module("attacks_impl." + f"{attack_name}")
+    attack_class = getattr(attack_class, f"attack_{attack_name}")
+    if not attack_class:
+        raise ValueError(f"Attack class '" + f"attack_{attack_name}" + "' not found.")
+    wattack = attack_class(attack_name, num_trials)
     mia_metrics = wattack.perform_attack(wdataset, attack_options)
 
 
