@@ -98,6 +98,8 @@ It supports a number of generative models that can be loaded using `transformers
 | Prediction Correctness Based MIA[^1] | `prediction_correctness_based_mia` | An attacker infers an input record as a member if it is correctly predicted by the target model, otherwise the attacker infers it as a non-member.  |
 | Prediction Loss Based MIA[^1] | `prediction_loss_based_mia` | An attacker infers an input record as a member if its prediction loss is smaller than the average loss of all training members, otherwise the attacker infers it as a nonmember. |
 | Prediction Confidence Based MIA[^2] | `prediction_confidence_based_mia` | An attacker infers an input record as a member if its maximum prediction confidence is larger than a preset threshold, otherwise the attacker infers it as a non-member |
+| Prediction Entropy Based MIA[^2] | `prediction_entropy_based_mia` | An attacker infers an input record as a member if its
+prediction entropy is smaller than a preset threshold, otherwise the attacker infers it as a nonmember. |
 | ReCall | `recall` | Based on the assumption that the relative change in conditional log-likelihoods when prefixing target data points with non-target data points will be larger than the realtive change when prefixing non-target data point with non-target data points. More details can be found on [ReCall project page](https://royxie.com/recall-project-page/)  |
 | Black-box Shadow MIA[^3] | `bb-shadow` |  Based on training a binary classifier, which can distinguish a target model’s behavior of itstraining members from the non-members by creating multiple shadow models to mimic the behavior of the target model. Still under construction. |
 | Zlib Entropy MIA[^4] | `zlib` | The Zlib Entropy normalizes the target model’s loss using the zlib compression size of the input sample and decides on membership by comapring to a threshod. |
@@ -137,10 +139,8 @@ class attack_zlib(metric_attack):
         for ind_ex, ex in enumerate(tqdm(attack_dataset)):
             ll = get_ll(ex["text"], self.model, self.tokenizer, self.device)[1]
             zlib_score = ll / len(zlib.compress(bytes(ex["text"], "utf-8")))
-            # print(f"zlib_score = {zlib_score}")
             self.membership_pred[ind_ex] = int(zlib_score >= self.score_thr)
 ```
-
 
 
 [^1]: Samuel Yeom, Irene Giacomelli, Matt Fredrikson, and Somesh Jha. 2018. Privacy risk in machine learning: Analyzing

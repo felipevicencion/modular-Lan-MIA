@@ -11,7 +11,6 @@ import importlib
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Parsing input arguments and initilizing variables
-
 args = Options()
 args = args.parser.parse_args()
 dataset_name = args.dataset
