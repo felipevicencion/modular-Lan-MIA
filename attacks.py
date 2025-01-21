@@ -6,6 +6,7 @@ import datasets
 from tqdm import tqdm
 from utils import *    
 from dataset import *
+import scipy
 import zlib
     
 class attack:

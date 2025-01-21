@@ -65,8 +65,7 @@ class pretrained_models:
         # fetch train and test data
         train_data, test_data = wdataset.get_train_test()
         if self.task == 'classification':
-            _, uniques = pd.factorize(train_data.to_pandas()["label"])
-            self.num_classes = len(uniques)
+            self.num_classes = len(set(train_data.to_pandas()["label"]))
             self.model.config.num_labels = self.num_classes
             print(f"..num_classes = {self.num_classes}")
             
@@ -84,7 +83,10 @@ class pretrained_models:
         if self.task == 'classification':
             labels = pred.label_ids
             preds = pred.predictions.argmax(-1)
-            if self.num_classes == 2:
+            print(pred)
+            # if len(set(labels)) != len(set(pred.flatten())):
+            #     raise ValueError("The number of unique classes in 'labels' and 'pred' must match.")
+            if len(set(labels)) == 2: 
                 average_opt = 'binary'
             else:
                 average_opt = 'micro'
@@ -105,8 +107,7 @@ class pretrained_models:
         train_data, test_data = wdataset.get_train_test()
         
         # load model and tokenizer and define length of the text sequence, number of classes
-        _, uniques = pd.factorize(train_data.to_pandas()["label"])
-        self.num_classes = len(uniques)
+        self.num_classes = len(set(train_data.to_pandas()["label"]))
         self.model.config.num_labels = self.num_classes
         print(f"..num_classes = {self.num_classes}")
         # model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name, num_labels = self.num_classes)

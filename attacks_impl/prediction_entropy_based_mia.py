@@ -13,5 +13,5 @@ class attack_prediction_entropy_based_mia(metric_attack):
         predictions_output = trainer.predict(attack_dataset)
         predictions = predictions_output.predictions
         probabilities = scipy.special.softmax(predictions, axis=1)
-        entropy = scipy.stats.entropy(pred_vector, base=10)
-        self.membership_pred = torch.tensor( (entropy <= attack_options['confidence_thr']).astype(int) )
+        sample_entropies = np.apply_along_axis(scipy.stats.entropy, axis=1, arr=probabilities, base=10)
+        self.membership_pred = torch.tensor( (sample_entropies <= attack_options['confidence_thr']).astype(int) )
