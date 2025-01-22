@@ -9,7 +9,7 @@ from dataset import *
 import scipy
 import zlib
     
-class attack:
+class Attack:
 
     def __init__(self, attack_name, num_trials):
             self.attack_name = attack_name
@@ -72,13 +72,19 @@ class attack:
         return self.mia_metrics
 
 # subclass representing shadow-type attacks
-class shadow_attack(attack):
+class ShadowAttack(Attack):
 
     def __init__(self, attack_name, num_trials):
         super().__init__(attack_name, num_trials)
 
 # subclass representing metric-type attacks
-class metric_attack(attack):
+class MetricAttack(Attack):
+
+    def __init__(self, attack_name, num_trials):
+        super().__init__(attack_name, num_trials)
+
+# subclass of metric attacks based on thresholding
+class ThresholdAttack(MetricAttack):
 
     def __init__(self, attack_name, num_trials):
         super().__init__(attack_name, num_trials)

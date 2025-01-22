@@ -49,7 +49,7 @@ log_dir = args.log_dir
 
 print(f"..loading dataset {dataset_name}")
 #### loading a dataset
-wdataset = dataset(dataset_name)
+wdataset = Dataset(dataset_name)
 wdataset.train_test_split(use_data_percentage)
 
 model_options = {
@@ -66,12 +66,12 @@ if run_mode == 'fine-tunning':
     print("..fine-mapping of pretrained NLP model")
     #### fine-tuning of pretrained NLP model
     # wmodel = pretrained_models(model_name, task, max_sequence_length, load_model_dir, output_dir, log_dir)
-    wmodel = pretrained_models(model_options)
+    wmodel = PretrainedModels(model_options)
     trainer, train_data, test_data = wmodel.fine_tune(wdataset, num_epochs)
 
 elif run_mode == 'attack':
     # wmodel = pretrained_models(model_name, task, max_sequence_length, load_model_dir)
-    wmodel = pretrained_models(model_options)
+    wmodel = PretrainedModels(model_options)
     trainer, model, tokenizer = wmodel.prepare_model(wdataset)
     attack_options = {
         'load_model_dir': load_model_dir,
@@ -93,9 +93,10 @@ elif run_mode == 'attack':
     # attack_class = globals().get(f"attack_{attack_name}")
     # module_name = "attacks_impl.zlib"
     attack_class = importlib.import_module("attacks_impl." + f"{attack_name}")
-    attack_class = getattr(attack_class, f"attack_{attack_name}")
+    attack_class_name = capitalize_after_underscore(attack_name)
+    attack_class = getattr(attack_class, f"Attack{attack_class_name}")
     if not attack_class:
-        raise ValueError(f"Attack class '" + f"attack_{attack_name}" + "' not found.")
+        raise ValueError(f"Attack class '" + f"Attack{attack_class_name}" + "' not found.")
     wattack = attack_class(attack_name, num_trials)
     mia_metrics = wattack.perform_attack(wdataset, attack_options)
 

@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, '..')
 from attacks import *
 
-class attack_prediction_loss_based_mia(metric_attack):
+class AttackPredictionLossBasedMia(metric_attack):
 
     def __init__(self, attack_name, num_trials):
         super().__init__(attack_name, num_trials)

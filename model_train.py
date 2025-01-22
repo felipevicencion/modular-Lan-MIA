@@ -7,7 +7,7 @@ from utils import *
 from dataset import *
 # from accelerate import Accelerator
 
-class pretrained_models:
+class PretrainedModels:
 
     def __init__(self, model_options):
         # model_name = 'roberta_base'

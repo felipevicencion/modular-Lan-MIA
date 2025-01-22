@@ -3,7 +3,7 @@ import sys
 sys.path.insert(0, '..')
 from attacks import *
 
-class attack_zlib(metric_attack):
+class AttackZlib(ThresholdAttack):
 
     def __init__(self, attack_name, num_trials):
         super().__init__(attack_name, num_trials)

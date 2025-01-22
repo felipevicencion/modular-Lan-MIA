@@ -4,7 +4,7 @@
 import datasets
 import torch
 
-class dataset:
+class Dataset:
 
         def __init__(self, dataset_name):
             self.dataset_name = dataset_name

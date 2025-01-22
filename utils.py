@@ -1,9 +1,6 @@
 import torch
 import numpy as np
 from transformers import set_seed
-
-
-import torch
 import torch.nn as nn
 import torch.optim as optim
 
@@ -129,3 +126,7 @@ def tokenize_data(tokenizer, train_data, test_data, max_sequence_length):
     train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
     test_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
     return train_data, test_data
+
+def capitalize_after_underscore(input_string):
+    # Split the string by underscores, capitalize each part, and join them back
+    return ''.join(word.capitalize() for word in input_string.split('_'))
