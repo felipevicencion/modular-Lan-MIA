@@ -1,11 +1,11 @@
-import torch
 import sys
+import torch
 sys.path.insert(0, '..')
 from attacks import *
 
 class AttackPredictionCorrectnessBasedMia(MetricAttack):
 
-    def __init__(self, attack_name, num_trials):
+    def __init__(self, attack_name, num_trials, unknown_args):
         super().__init__(attack_name, num_trials)
 
     def run_attack(self, attack_dataset, membership_true, attack_options):

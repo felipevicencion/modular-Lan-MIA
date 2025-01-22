@@ -12,7 +12,8 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Parsing input arguments and initilizing variables
 args = Options()
-args = args.parser.parse_args()
+args, unknown_args = args.parser.parse_known_args()
+# args = args.parser.parse_args()
 dataset_name = args.dataset
 task = args.task
 torch_num_threads = int(args.torch_num_threads)
@@ -28,10 +29,6 @@ load_model_dir = args.load_model_dir
 attack_name = args.attack_name
 num_trials = int(args.num_trials)
 score_thr = float(args.score_thr)
-num_shots = args.num_shots
-pass_window = args.pass_window
-max_length = args.max_length
-prefix = args.prefix
 num_shadow_models = int(args.num_shadow_models)
 run_mode = args.run_mode
 output_dir = args.output_dir
@@ -75,17 +72,13 @@ elif run_mode == 'attack':
     trainer, model, tokenizer = wmodel.prepare_model(wdataset)
     attack_options = {
         'load_model_dir': load_model_dir,
-        'pass_window': pass_window,
-        'max_length': max_length,
-        'num_shots': num_shots,
         'confidence_thr': 0.9,
         'tokenizer' : tokenizer,
         'trainer' : trainer,
         'score_thr' : score_thr,
-        'prefix' : prefix,
         'model' : model,
         'num_shadow_models' : num_shadow_models,
-        'max_sequence_length' : max_sequence_length
+        'max_sequence_length' : max_sequence_length 
     }
     # print(attack_options)
     print(f"..performing attack {attack_name}")
@@ -97,7 +90,7 @@ elif run_mode == 'attack':
     attack_class = getattr(attack_class, f"Attack{attack_class_name}")
     if not attack_class:
         raise ValueError(f"Attack class '" + f"Attack{attack_class_name}" + "' not found.")
-    wattack = attack_class(attack_name, num_trials)
+    wattack = attack_class(attack_name, num_trials, unknown_args)
     mia_metrics = wattack.perform_attack(wdataset, attack_options)
 
 

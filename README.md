@@ -107,7 +107,20 @@ It supports a number of generative models that can be loaded using `transformers
 
 # Adding a custom attack to the framework
 
-Every embedded attack should be an instance of either `shadow_attack` or `metric_attack` class and must implement all the required operations. It should be place in `attacks_impl` subdirectory within the many repository alongside other implemented attacks. Currently, all attacks require only one implemented function with definition `run_attack(self, attack_dataset, membership_true, attack_options)`, where
+Every embedded attack should be an instance of either `ShadowAttack` or `MetricAttack` class (or its subclass named `ThresholdAttack`) and must implement all the required operations:
+1. constructor `__init__(self, attack_name, num_trials, unknown_args)`
+2. run_attack procedure `run_attack(self, attack_dataset, membership_true, attack_options)`
+
+Newly defined attack must be placed in `attacks_impl` subdirectory within the many repository alongside other implemented attacks. Currently, constructor must accept the following parameters:
+
+| Parameter        | Description                                                                                                           |
+|------------------|-----------------------------------------------------------------------------------------------------------------------|
+| `attack_name`    | Name of the implemented attack.                                                                                       |
+| `num_trials`     | Number of membership inference attacks to be performed (50% members, 50% non-members).                                |
+| `unknown_args`   | List of unused input options to be parsed and used withing the attack implementation.                                 |
+
+
+and a function `run_attack(self, attack_dataset, membership_true, attack_options)` must accept the following parameters:
 
 | Parameter        | Description                                                                                                           |
 |------------------|-----------------------------------------------------------------------------------------------------------------------|
@@ -115,20 +128,25 @@ Every embedded attack should be an instance of either `shadow_attack` or `metric
 | `membership_true`| A torch vector indicating membership status: 1 for member, 0 for non-member.                                          |
 | `attack_options` | A dictionary of parameters used to configure the attack depending information needed for a particular attack.         |
 
-and should load the `attacks` library in the parental folder.
+and should load the `attacks` library in the parental folder. 
 
-In the continuation of this chapter, we provide an example of implmentation for one of the available attacks called _zlib_:
+In the continuation of this chapter, we provide an example of implmentation for one of the available attacks called _recall_:
 
 ```
-import torch 
 import sys
+import argparse
+import torch 
 sys.path.insert(0, '..')
 from attacks import *
 
-class attack_zlib(metric_attack):
+class AttackMink(ThresholdAttack):
 
-    def __init__(self, attack_name, num_trials):
+    def __init__(self, attack_name, num_trials, unknown_args):
         super().__init__(attack_name, num_trials)
+        attack_options_parser = argparse.ArgumentParser(description="mink options parser")
+        attack_options_parser.add_argument("-mink_ratio", "--mink-ratio", type=float, help="percentage determining the count of lowest probable tokens considered for mink score", default=0.2)
+        attack_args, _ = attack_options_parser.parse_known_args(unknown_args)
+        self.mink_ratio = attack_args.mink_ratio
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
         self.model = attack_options['model']
@@ -137,10 +155,18 @@ class attack_zlib(metric_attack):
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
+        self.mink_ratio = 0.2
         for ind_ex, ex in enumerate(tqdm(attack_dataset)):
-            ll = get_ll(ex["text"], self.model, self.tokenizer, self.device)[1]
-            zlib_score = ll / len(zlib.compress(bytes(ex["text"], "utf-8")))
-            self.membership_pred[ind_ex] = int(zlib_score >= self.score_thr)
+            input_ids = torch.tensor(self.tokenizer.encode(ex["text"])).unsqueeze(0).to(self.device)
+            with torch.no_grad():
+                outputs = self.model(input_ids, labels=input_ids)
+            _, logits = outputs[:2]
+            log_probs = torch.nn.functional.log_softmax(logits[0, :-1], dim=-1)
+            token_log_probs = log_probs.gather(dim=-1, index=input_ids).squeeze(-1)
+            k_length = int(len(token_log_probs) * ratio)
+            topk = np.sort(token_log_probs.cpu())[:k_length]
+            mink_score = np.mean(topk).item()
+            self.membership_pred[ind_ex] = int(mink_score >= self.score_thr)
 ```
 
 

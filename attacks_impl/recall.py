@@ -1,21 +1,32 @@
-import torch 
 import sys
+import argparse
+import torch 
 sys.path.insert(0, '..')
 from attacks import *
 
 class AttackRecall(ThresholdAttack):
 
-    def __init__(self, attack_name, num_trials):
+    def __init__(self, attack_name, num_trials, unknown_args):
         super().__init__(attack_name, num_trials)
+        attack_options_parser = argparse.ArgumentParser(description="recall options parser")
+        attack_options_parser.add_argument("-num_shots", "--num-shots", type=int, help = "attack ReCall: number of shots for prefix", default = 1)
+        attack_options_parser.add_argument("-pass_window", "--pass-window", type=bool, help = "attack ReCall: (Optional) exceed the context window", default = True)
+        attack_options_parser.add_argument("-max_length", "--max-length", type=int, help = "attack ReCall: Maximum length of the window", default = 512)
+        attack_options_parser.add_argument("-prefix", "--prefix", type=str, help = "attack ReCall: a prefix to be used in an attack", default = "This is a synthetic prefix!")
+        attack_args, _ = attack_options_parser.parse_known_args(unknown_args)
+        self.num_shots = attack_args.num_shots
+        self.pass_window = attack_args.pass_window
+        self.max_length = attack_args.max_length
+        self.prefix = attack_args.prefix
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
-        self.prefix = attack_options['prefix']
+        # self.prefix = attack_options['prefix']
         self.model = attack_options['model']
         self.score_thr = attack_options['score_thr']
-        self.max_length = attack_options['max_length']
-        self.num_shots = attack_options['num_shots']
+        # self.max_length = attack_options['max_length']
+        # self.num_shots = attack_options['num_shots']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.pass_window = attack_options['pass_window']
+        # self.pass_window = attack_options['pass_window']
         self.tokenizer = attack_options['tokenizer']
         if int(self.num_shots) != 0:  
             for ex in attack_dataset:
