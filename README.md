@@ -102,7 +102,8 @@ It supports a number of generative models that can be loaded using `transformers
 | Modified Prediction Entropy Based MIA[^3] | `prediction_entropy_based_mia` | An attacker infers an input record as a member if its modified prediction entropy (which involves information on true labels) is smaller than a preset threshold, otherwise the attacker infers it as a nonmember. |
 | ReCall | `recall` | Based on the assumption that the relative change in conditional log-likelihoods when prefixing target data points with non-target data points will be larger than the realtive change when prefixing non-target data point with non-target data points. More details can be found on [ReCall project page](https://royxie.com/recall-project-page/)  |
 | Black-box Shadow MIA[^4] | `bb-shadow` |  Based on training a binary classifier, which can distinguish a target model’s behavior of itstraining members from the non-members by creating multiple shadow models to mimic the behavior of the target model. Still under construction. |
-| Zlib Entropy MIA[^5] | `zlib` | The Zlib Entropy normalizes the target model’s loss using the zlib compression size of the input sample and decides on membership by comapring to a threshod. |
+| Zlib Entropy MIA[^5] | `zlib` | The Zlib Entropy normalizes the target model’s loss using the zlib compression size of the input sample and decides on membership by comparing to a threshod. |
+| Mink-K% MIA[^6] | `mink` | Thresholds against membership scores computed using the average log-likelihood of the k% of tokens with the lowest probabilities, predicting membership if above threshold as the least likely tokens are expected to have higher probabilities for member samples compared to non-members. |
 
 # Adding a custom attack to the framework
 
@@ -148,12 +149,12 @@ the connection to overfitting. In 2018 IEEE 31st Computer Security Foundations S
 [^2]: Ahmed Salem, Yang Zhang, Mathias Humbert, Mario Fritz, and Michael Backes. 2019. ML-Leaks: Model and Data
 Independent Membership Inference Attacks and Defenses on Machine Learning Models. In Network and Distributed
 Systems Security Symposium 2019. Internet Society
-[^3] Liwei Song and Prateek Mittal. 2021. Systematic evaluation of privacy risks of machine learning models. In 30th
+[^3]: Liwei Song and Prateek Mittal. 2021. Systematic evaluation of privacy risks of machine learning models. In 30th
 USENIX Security Symposium (USENIX Security 21). USENIX Association, 2615–2632.
 [^4]: Reza Shokri, Marco Stronati, Congzheng Song, and Vitaly Shmatikov. 2017. Membership inference attacks against
 machine learning models. In 2017 IEEE Symposium on Security and Privacy (S&P). IEEE, 3–18.
 [^5]: Nicholas Carlini, Florian Tramer, Eric Wallace, Matthew Jagielski, Ariel Herbert-Voss, Katherine Lee, Adam Roberts, Tom Brown, Dawn Song, Ulfar Erlingsson, et al. 2021. Extracting training data from large language models. In 30th USENIX Security Symposium (USENIX Security 21), pages 2633–2650.
-
+[^6]: Weijia Shi, Anirudh Ajith, Mengzhou Xia, Yangsibo Huang, Daogao Liu, Terra Blevins, Danqi Chen, and Luke Zettlemoyer. 2024. Detecting pretraining data from large language models. In The Twelfth International Conference on Learning Representations.
 
 
             

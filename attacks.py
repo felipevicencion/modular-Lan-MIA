@@ -60,7 +60,7 @@ class Attack:
 
         train_data, test_data = wdataset.get_train_test()
         # attack_options is a dictionary containing additional inputs and parameters required to performa MIAs such as thresold values and other
-        if self.attack_name not in ['recall', 'zlib']:
+        if self.attack_name not in ['recall', 'zlib', 'mink']:
             train_data, test_data = tokenize_data(attack_options['tokenizer'], train_data, test_data, attack_options['max_sequence_length'])
         shf_train_data = train_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         shf_test_data = test_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
