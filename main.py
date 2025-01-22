@@ -1,4 +1,4 @@
-from dataset import dataset
+from dataset import *
 from model_train import *
 from attacks import *
 import torch
@@ -92,8 +92,8 @@ elif run_mode == 'attack':
     #### performing an attack
     # attack_class = globals().get(f"attack_{attack_name}")
     # module_name = "attacks_impl.zlib"
-    attack_class = importlib.import_module("attacks_impl." + f"{attack_name}")
     attack_class_name = capitalize_after_underscore(attack_name)
+    attack_class = importlib.import_module("attacks_impl." + f"{attack_name}")
     attack_class = getattr(attack_class, f"Attack{attack_class_name}")
     if not attack_class:
         raise ValueError(f"Attack class '" + f"Attack{attack_class_name}" + "' not found.")

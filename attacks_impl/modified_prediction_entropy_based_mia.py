@@ -16,5 +16,5 @@ class AttackModifiedPredictionEntropyBasedMia(ThresholdAttack):
         modified_sample_entropies = np.apply_along_axis(scipy.stats.entropy, axis=1, arr=probabilities, base=10)
         label_ids = predictions_output.label_ids
         py = probabilities[np.arange(probabilities.shape[0]), label_ids]
-        modified_entropy = modified_entropy + (1+2*py) * np.log(py)
+        modified_entropy = modified_sample_entropies + (1+2*py) * np.log(py)
         self.membership_pred = torch.tensor( (modified_entropy <= attack_options['confidence_thr']).astype(int) )
