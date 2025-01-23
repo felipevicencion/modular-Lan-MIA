@@ -18,6 +18,27 @@ class Attack:
             self.mia_metrics = {}
 
     def calculate_mia_metrics(self, true_labels, predicted_labels):
+        """
+        Parameters:
+            true_labels (torch.Tensor): Ground truth labels as a tensor of type long. 
+                                        Expected to contain binary values (0 or 1).
+            predicted_labels (torch.Tensor): Predicted labels as a tensor of type long. 
+                                             Expected to contain binary values (0 or 1).
+        
+        Returns:
+            dict: A dictionary containing the following metrics:
+                - TP: True Positives
+                - FP: False Positives
+                - TN: True Negatives
+                - FN: False Negatives
+                - Accuracy: Accuracy of the model
+                - Precision: Positive predictive value
+                - Recall (TPR)
+                - F1 Score: Harmonic mean of precision and recall
+                - FPR: False Positive Rate
+                - TPR: True Positive Rate 
+                - Adv: Advantage (TPR - FPR)
+        """
         # tensors are of type long (for classification)
         true_labels = true_labels.long()
         predicted_labels = predicted_labels.long()
@@ -57,7 +78,20 @@ class Attack:
         raise NotImplementedError("Attack must implement the run_attack method.")
             
     def perform_attack(self, wdataset, attack_options):
-
+        """
+        Perform a membership inference attack (MIA) on the given dataset.
+    
+        Parameters:
+            wdataset: A dataset object 
+            attack_options (dict): A dictionary containing general options and parameters 
+                                   required for the attack, such as:
+                                   - 'tokenizer': Tokenizer function for text processing.
+                                   - 'max_sequence_length': Maximum sequence length for tokenized inputs.
+                                   - Other attack-specific parameters (e.g., thresholds).
+    
+        Returns:
+            dict: A dictionary containing MIA metrics computed after the attack.
+        """
         train_data, test_data = wdataset.get_train_test()
         # attack_options is a dictionary containing additional inputs and parameters required to performa MIAs such as thresold values and other
         if self.attack_name not in ['recall', 'zlib', 'mink']:

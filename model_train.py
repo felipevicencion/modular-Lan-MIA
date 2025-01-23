@@ -26,6 +26,16 @@ class PretrainedModels:
             self.model.eval()
         
     def load_specific_model(self):
+        """
+        Load a specific model and tokenizer based on the task type and model name.
+    
+        Attributes Modified:
+            - self.model: The loaded model object, either for classification or generative tasks.
+            - self.tokenizer: The corresponding tokenizer for the loaded model.
+            
+        Raises:
+            Exception: If an error occurs during model or tokenizer loading.
+        """
         if self.task == 'classification':
             try:
                 self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir)
@@ -61,7 +71,15 @@ class PretrainedModels:
                 # print(self.tokenizer.decode(tokens[0]))
 
     def prepare_model(self, wdataset):
-
+        """
+        Parameters:
+            wdataset: A dataset object 
+        Returns:
+            tuple: A tuple containing:
+                   - trainer (transformers.Trainer): Configured Trainer object for model training.
+                   - model: The prepared model.
+                   - tokenizer: The corresponding tokenizer.
+        """
         # fetch train and test data
         train_data, test_data = wdataset.get_train_test()
         if self.task == 'classification':
@@ -80,6 +98,20 @@ class PretrainedModels:
         return trainer, self.model, self.tokenizer
 
     def compute_metrics(self, pred):
+        """
+        Compute evaluation metrics for the model based on predictions.
+    
+        Parameters:
+            pred: Predictions object containing `label_ids` and `predictions`.
+    
+        Returns:
+            dict: A dictionary containing the calculated metrics:
+                  - 'accuracy': Accuracy of predictions.
+                  - 'f1': F1 score of predictions.
+                  - 'precision': Precision of predictions.
+                  - 'recall': Recall of predictions.
+                  If the task is not classification, returns an empty dictionary.
+        """
         if self.task == 'classification':
             labels = pred.label_ids
             preds = pred.predictions.argmax(-1)
@@ -102,6 +134,19 @@ class PretrainedModels:
             return {}
     
     def fine_tune(self, wdataset, num_epochs):
+        """
+        Fine-tune a pre-trained model on a given dataset for a specified number of epochs.
+    
+        Parameters:
+            wdataset: A dataset object 
+            num_epochs (int): The number of epochs to train the model.
+    
+        Returns:
+            tuple: A tuple containing:
+                   - trainer (transformers.Trainer): The Trainer object used for fine-tuning.
+                   - train_data: Tokenized training dataset.
+                   - test_data: Tokenized testing dataset.
+        """
 
         # fetch train and test data
         train_data, test_data = wdataset.get_train_test()

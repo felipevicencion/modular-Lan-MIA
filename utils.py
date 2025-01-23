@@ -60,12 +60,33 @@ def train_binary_classifier(layer_sizes, X_train, y_train, num_epochs=10, batch_
 
 # function that sets seed for all the libraries used
 def fix_seed(seed: int = 0):
+    """
+    Sets a fixed seed for reproducibility in random number generation for PyTorch, NumPy, 
+    and other libraries that depend on randomization.
+
+    Parameters:
+        seed (int): The seed value to use. Default is 0.
+    """
     torch.manual_seed(seed)
     np.random.seed(seed)
     set_seed(seed)
 
 # helper function for the recall attack
 def recall_process_prefix(max_length, prefix, avg_length, pass_window, total_shots, tokenizer):
+    """
+    Processes the prefix for a recall attack 
+
+    Parameters:
+        max_length (int): Maximum allowed token length for the sequence.
+        prefix (list): A list of prefix shots
+        avg_length (int): Average target length for the sequence.
+        pass_window (bool): Whether to bypass truncation and use the full prefix.
+        total_shots (int): Total number of shots to include in the prefix.
+        tokenizer: Tokenizer used to encode the text.
+
+    Returns:
+        list: The processed prefix, truncated if necessary to fit within the max token length.
+    """
     if pass_window:
         return prefix
     token_counts = [len(tokenizer.encode(shot)) for shot in prefix]
@@ -88,6 +109,22 @@ def recall_process_prefix(max_length, prefix, avg_length, pass_window, total_sho
     return truncated_prefix
 
 def recall_get_all_prob(input_ids, loss, logits):
+    """
+    Calculates various probabilities, log-likelihoods, and perplexities based on the model's outputs.
+
+    Parameters:
+        input_ids (torch.Tensor): Tensor of input token IDs.
+        loss (torch.Tensor): Loss tensor from the model's output.
+        logits (torch.Tensor): Logits tensor from the model's output.
+
+    Returns:
+        tuple: A tuple containing:
+            - prob (float): Exponentiated negative loss (probability of the sequence).
+            - ll (float): Log-likelihood of the sequence.
+            - ppl (float): Perplexity of the sequence.
+            - all_prob (list): List of probabilities for each token.
+            - loss (float): The raw loss value.
+    """
     probabilities = torch.nn.functional.log_softmax(logits, dim=-1)
     all_prob = []
     input_ids_processed = input_ids[0][1:]
@@ -100,6 +137,18 @@ def recall_get_all_prob(input_ids, loss, logits):
     return prob, ll , ppl, all_prob, loss.item()
 
 def get_ll(sentence, model, tokenizer, device):
+    """
+    Calculates the log-likelihood, probabilities, and perplexity for a given sentence.
+
+    Parameters:
+        sentence (str): The input sentence for which to compute metrics.
+        model: The pre-trained language model.
+        tokenizer: Tokenizer associated with the model.
+        device: The device (CPU/GPU) for computation.
+
+    Returns:
+        tuple: See `recall_get_all_prob` for details.
+    """
     input_ids = torch.tensor(tokenizer.encode(sentence)).unsqueeze(0)
     input_ids = input_ids.to(device)
     with torch.no_grad():
@@ -108,6 +157,20 @@ def get_ll(sentence, model, tokenizer, device):
     return recall_get_all_prob(input_ids, loss, logits)
 
 def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device):
+    """
+    Calculates conditional log-likelihood, probabilities, and perplexity for a target text
+    conditioned on the prefix.
+
+    Parameters:
+        input_text (str): The input context text.
+        target_text (str): The target text for which to compute metrics.
+        model: The pre-trained language model.
+        tokenizer: Tokenizer associated with the model.
+        device: The device (CPU/GPU) for computation.
+
+    Returns:
+        tuple: See `recall_get_all_prob` for details.
+    """
     input_encodings = tokenizer(input_text, return_tensors="pt")
     target_encodings = tokenizer(target_text, return_tensors="pt")
     concat_ids = torch.cat((input_encodings.input_ids.to(device), target_encodings.input_ids.to(device)), dim=1)
@@ -120,6 +183,18 @@ def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device)
 
 # function to tokenize train and test data
 def tokenize_data(tokenizer, train_data, test_data, max_sequence_length):
+    """
+    Tokenizes the train and test datasets.
+
+    Parameters:
+        tokenizer: Tokenizer to convert text into input IDs, attention masks, etc.
+        train_data: Training dataset to be tokenized.
+        test_data: Testing dataset to be tokenized.
+        max_sequence_length (int): Maximum token length for truncation and padding.
+
+    Returns:
+        tuple: Tokenized train and test datasets.
+    """
     tokenize_data = lambda batch: tokenizer(batch['text'], max_length=max_sequence_length, padding=True, truncation=True)
     train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
     test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
@@ -128,5 +203,14 @@ def tokenize_data(tokenizer, train_data, test_data, max_sequence_length):
     return train_data, test_data
 
 def capitalize_after_underscore(input_string):
+    """
+    Capitalizes each word in a string that is separated by underscores and afterwards removes all underscores.
+
+    Parameters:
+        input_string (str): The input string containing words separated by underscores.
+
+    Returns:
+        str: A string with each word capitalized and the underscores removed.
+    """
     # Split the string by underscores, capitalize each part, and join them back
     return ''.join(word.capitalize() for word in input_string.split('_'))

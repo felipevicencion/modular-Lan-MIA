@@ -17,6 +17,23 @@ class Dataset:
             return self.train_data, self.test_data
 
         def train_test_split(self, use_data_percentage):
+             """
+            Load a specified dataset, split it into training and testing sets, and subset 
+            the data based on a given percentage.
+        
+            Parameters:
+                use_data_percentage (int): The percentage of the dataset to be include in 
+                                             both the training and testing splits. 
+                                             This value should be between 0 and 100.
+            Raises:
+                ValueError: If the provided dataset name is not supported.
+        
+            Attributes Modified:
+                - self.train_data: Subset of the member data based on the specified percentage.
+                - self.test_data: Subset of the non-member data based on the specified percentage.
+                - self.indices_train: Collection of randomly selected indices for the training subset.
+                - self.indices_test: Collection of randomly selected indices for the testing subset.
+            """
 
             if self.dataset_name == 'IMDb':
 
@@ -42,6 +59,18 @@ class Dataset:
             self.test_data = test_data.select(self.indices_test)
 
         def split_into_k_avoid_ind(k):
+            """
+            Splits the dataset into `k` subsets while avoiding indices already used 
+            in the training and testing split. This method creates shadow datasets 
+            for membership inference attacks (MIA).
+        
+            Parameters:
+                k (int): The number of subsets to divide the remaining data into.
+        
+            Attributes Modified:
+                - self.shadow_datasets: A list of `k` shadow datasets, each represented 
+                                        as a tuple `(train_data_subset, test_data_subset)`.
+            """
             all_indices = np.arange(len(self.train_data))
             valid_indices = np.setdiff1d(all_indices, self.indices_train + self.indices_test)
             shuffled_indices = np.random.permutation(valid_indices)
