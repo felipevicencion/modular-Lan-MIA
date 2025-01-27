@@ -20,7 +20,6 @@ class AttackMink(ThresholdAttack):
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
-        self.mink_ratio = 0.2
         for ind_ex, ex in enumerate(tqdm(attack_dataset)):
             input_ids = torch.tensor(self.tokenizer.encode(ex["text"])).unsqueeze(0).to(self.device)
             with torch.no_grad():
