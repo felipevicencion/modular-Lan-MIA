@@ -36,7 +36,5 @@ class LiRA(ShadowAttack):
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
-
-        
     
     
