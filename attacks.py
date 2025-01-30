@@ -122,3 +122,22 @@ class ThresholdAttack(MetricAttack):
 
     def __init__(self, attack_name, num_trials):
         super().__init__(attack_name, num_trials)
+
+    def thresholds_comp(scores, thrs):
+        """
+        Creates a membership matrix where each entry is 1 if the score is below the threshold, else 0.
+        
+        Parameters:
+        scores (list or array-like): A list of scores for each example in the dataset.
+        thrs (list or array-like): A vector of thresholds.
+        
+        Returns:
+        np.ndarray: A binary membership matrix of shape (len(scores), len(thrs)).
+        """
+        scores = np.array(scores).reshape(-1, 1)
+        thrs = np.array(thrs).reshape(1, -1)
+        
+        membership_matrix = (scores < thrs).astype(int) 
+        
+        return membership_matrix
+        

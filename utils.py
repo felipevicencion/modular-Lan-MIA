@@ -214,3 +214,17 @@ def capitalize_after_underscore(input_string):
     """
     # Split the string by underscores, capitalize each part, and join them back
     return ''.join(word.capitalize() for word in input_string.split('_'))
+
+def parse_thresholds(thr_str):
+    """Parses threshold input from command line."""
+    if "," in thr_str:
+        thr_list = []
+        for part in thr_str.split(","):
+            if ":" in part:
+                a, b, c = map(float, part.split(":"))
+                thr_list.extend(np.arange(a, b, c))
+            else:
+                thr_list.append(float(part))
+        return thr_list
+    else:
+        return float(thr_str)
