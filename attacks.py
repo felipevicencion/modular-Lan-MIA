@@ -140,4 +140,35 @@ class ThresholdAttack(MetricAttack):
         membership_matrix = (scores < thrs).astype(int) 
         
         return membership_matrix
+
+    def plot_roc_curves(membership_matrix, membership_true, out_loc):
+        mean_membership = membership_matrix.mean(axis=1)  # Average score per sample
+        fpr, tpr, _ = roc_curve(membership_true, mean_membership)
+        roc_auc = auc(fpr, tpr)
         
+        # Full ROC Curve
+        plt.figure(figsize=(8, 6))
+        plt.plot(fpr, tpr, color='blue', lw=2, label=f'ROC curve (AUC = {roc_auc:.2f})')
+        plt.plot([0, 1], [0, 1], color='grey', linestyle='--')
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC Curve')
+        plt.legend(loc='lower right')
+        plt.savefig(f"{out_loc}_full_roc_curve.png")
+        plt.close()
+    
+        print(f"full ROC curve saved to {out_loc}_full_roc_curve.png")
+        
+        # ROC Curve up to 1% FDR (False Discovery Rate ~ False Positive Rate)
+        fdr_threshold = 0.01
+        mask = fpr <= fdr_threshold
+        plt.figure(figsize=(8, 6))
+        plt.plot(fpr[mask], tpr[mask], color='red', lw=2, label=f'ROC (up to 1% FDR)')
+        plt.xlabel('False Positive Rate (FDR)')
+        plt.ylabel('True Positive Rate')
+        plt.title('ROC Curve (1% FDR)')
+        plt.legend(loc='lower right')
+        plt.savefig(f"{out_loc}_roc_curve_1percent_fdr.png")
+        plt.close()
+        
+        print(f"1percent ROC curve saved to {out_loc}_roc_curve_1percent_fdr.png")

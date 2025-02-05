@@ -3,6 +3,8 @@ import numpy as np
 from transformers import set_seed
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
+from sklearn.metrics import roc_curve, auc
 
 class FlexibleBinaryClassifier(nn.Module):
     def __init__(self, layer_sizes):
@@ -228,3 +230,5 @@ def parse_thresholds(thr_str):
         return thr_list
     else:
         return float(thr_str)
+
+

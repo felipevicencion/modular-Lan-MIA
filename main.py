@@ -79,7 +79,8 @@ elif run_mode == 'attack':
         'score_thr' : score_thr,
         'model' : model,
         'num_shadow_models' : num_shadow_models,
-        'max_sequence_length' : max_sequence_length 
+        'max_sequence_length' : max_sequence_length,
+        'output_dir' : output_dir
     }
     # print(attack_options)
     print(f"..performing attack {attack_name}")
