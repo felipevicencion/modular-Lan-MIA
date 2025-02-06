@@ -127,7 +127,7 @@ class Dataset:
             Distribute each sample in the attack dataset to exactly half of the shadow datasets (stored in self.shadow_datasets as a list).
             
             Parameters:
-                attack_samples (list): dataset object containing samples on which membership inference attack is being performed.
+                attack_dataset (list): dataset object containing samples on which membership inference attack is being performed.
                 
             Returns:
                 in_indices (list): Indices of the datasets that were chosen for a sample.
@@ -138,7 +138,7 @@ class Dataset:
                 raise ValueError("No shadow datasets available.")
             in_indices = []  
             out_indices = []  
-            for sample in attack_samples:
+            for sample in attack_dataset:
                 half_datasets = np.random.choice(num_shadow_datasets, size=num_shadow_datasets // 2, replace=False)
                 out_indices_sample = [idx for idx in range(num_shadow_datasets) if idx not in half_datasets]
                 in_indices.append(half_datasets.tolist())

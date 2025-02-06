@@ -133,7 +133,7 @@ class PretrainedModels:
         else:
             return {}
     
-    def fine_tune(self, wdataset, num_epochs):
+    def fine_tune(self, wdataset, num_epochs, idx_shadow = None):
         """
         Fine-tune a pre-trained model on a given dataset for a specified number of epochs.
     
@@ -150,6 +150,8 @@ class PretrainedModels:
 
         # fetch train and test data
         train_data, test_data = wdataset.get_train_test()
+        if idx_shadow is not None:
+            train_data = wdataset.shadow_datasets[idx_shadow]
         
         # load model and tokenizer and define length of the text sequence, number of classes
         self.num_classes = len(set(train_data.to_pandas()["label"]))

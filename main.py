@@ -80,7 +80,9 @@ elif run_mode == 'attack':
         'model' : model,
         'num_shadow_models' : num_shadow_models,
         'max_sequence_length' : max_sequence_length,
-        'output_dir' : output_dir
+        'output_dir' : output_dir,
+        'wdataset' : wdataset,
+        'model_options' : model_options
     }
     # print(attack_options)
     print(f"..performing attack {attack_name}")
