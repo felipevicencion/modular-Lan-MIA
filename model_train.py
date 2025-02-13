@@ -9,18 +9,43 @@ from dataset import *
 
 class PretrainedModels:
 
-    def __init__(self, model_options):
-        # model_name = 'roberta_base'
-        # max_sequence_length = 512
-        # log_dir = '/nfs/scistore17/robingrp/adepope/DataExtractionAttacks/logfiles'
-        # output_dir = '/nfs/scistore17/robingrp/adepope/DataExtractionAttacks/output'
-        self.model_name = model_options['model_name']
-        self.max_sequence_length = model_options['max_sequence_length']
-        self.output_dir = model_options['output_dir']
-        self.log_dir = model_options['log_dir']
-        self.load_model_dir = model_options['load_model_dir']
-        self.use_float16 = model_options['use_float16']
-        self.task = model_options['task']
+    def __init__(self, input_args):
+        model_options_parser = argparse.ArgumentParser(description="model options parser")
+        model_options_parser.add_argument("-model_name", "--model-name", type=str, help = "Name of the pretrained NLP model", default = "roberta-base")
+        model_options_parser.add_argument("-max_sequence_length", "--max-sequence-length", type=int, help = "Maximum sequence length", default = 512)
+        model_options_parser.add_argument("-log_dir", "--log-dir", type=str, help = "Location of the logfile", default = None)
+        model_options_parser.add_argument("-output_dir", "--output-dir", type=str, help = "Location of the output directory", default = None)  
+        model_options_parser.add_argument("-load_model_dir", "--load-model-dir", type=str, help = "Directory from which a trained model is loaded", default = None)
+        model_options_parser.add_argument("-use_float16", "--use-float16", type=bool, help = "Whether or not to store weight in 16 bit floats", default = False)
+        model_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
+        model_options_parser.add_argument("-num_epochs", "--num-epochs", type=int, help = "Number of epochs used in the fine-tuning of the model", default = 5)
+        model_options_parser.add_argument("-per_device_train_batch_size", "--per-device-train-batch-size", type=int, help = "Per device train batch size", default = 16)
+        model_options_parser.add_argument("-per_device_eval_batch_size", "--per-device-eval-batch-size", type=int, help = "Per device eval batch size", default = 16)
+        model_options_parser.add_argument("-learning_rate", "--learning-rate", type=float, help = "Learning rate used in fine-tunning", default = 2e-5)
+        model_options_parser.add_argument("-weight_decay", "--weight-decay", type=float, help = "Weight decay parameter used in fine-tunning", default = 0.01)
+        model_options_parser.add_argument("-warmup_ratio", "--warmup-ratio", type=float, help = "Warmup ratio parameter used in fine-tunning", default = 0.1)
+
+        model_args, _ = model_options_parser.parse_known_args(input_args)
+        self.model_name = model_args.model_name
+        self.max_sequence_length = model_args.max_sequence_length
+        self.output_dir = model_args.output_dir
+        self.log_dir = model_args.log_dir
+        self.load_model_dir = model_args.load_model_dir
+        self.use_float16 = model_args.use_float16
+        self.task = model_args.task
+        self.num_epochs = model_args.num_epochs
+        self.per_device_train_batch_size = model_args.per_device_train_batch_size
+        self.per_device_eval_batch_size = model_args.per_device_eval_batch_size
+        self.learning_rate = model_args.learning_rate
+        self.weight_decay = model_args.weight_decay
+        self.warmup_ratio = model_args.warmup_ratio
+        # self.model_name = model_options['model_name']
+        # self.max_sequence_length = model_options['max_sequence_length']
+        # self.output_dir = model_options['output_dir']
+        # self.log_dir = model_options['log_dir']
+        # self.load_model_dir = model_options['load_model_dir']
+        # self.use_float16 = model_options['use_float16']
+        # self.task = model_options['task']
         self.load_specific_model()
         if self.task == 'generative':
             self.model.eval()
@@ -65,7 +90,7 @@ class PretrainedModels:
                 )    
                 self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
                 self.tokenizer.pad_token = self.tokenizer.eos_token
-                # piece of code for testing the code above
+                # piece of code for testing the part above
                 # inputs = self.tokenizer("Hello, square root of -4 is", return_tensors="pt")
                 # tokens = self.model.generate(**inputs, max_length=30, num_return_sequences=1)
                 # print(self.tokenizer.decode(tokens[0]))
@@ -133,13 +158,12 @@ class PretrainedModels:
         else:
             return {}
     
-    def fine_tune(self, wdataset, num_epochs, idx_shadow = None):
+    def fine_tune(self, wdataset, idx_shadow = None):
         """
         Fine-tune a pre-trained model on a given dataset for a specified number of epochs.
     
         Parameters:
             wdataset: A dataset object 
-            num_epochs (int): The number of epochs to train the model.
     
         Returns:
             tuple: A tuple containing:
@@ -172,19 +196,21 @@ class PretrainedModels:
         # define the training arguments
         training_args = transformers.TrainingArguments(
             output_dir = self.output_dir,
-            num_train_epochs=num_epochs,
-            per_device_train_batch_size = 20,
-            gradient_accumulation_steps = 16,
-            per_device_eval_batch_size= 8,
+            num_train_epochs=self.num_epochs,
+            per_device_train_batch_size = self.per_device_train_batch_size,
+            per_device_eval_batch_size= self.per_device_eval_batch_size,
+            gradient_accumulation_steps = 1,
             eval_strategy = "epoch",
             save_strategy = "epoch",
             load_best_model_at_end=True,
-            warmup_steps=500,
-            weight_decay=0.01,
+            warmup_ratio = self.warmup_ratio,
+            weight_decay=self.weight_decay,
             logging_steps = 8,
             fp16 = True,
             logging_dir=self.log_dir,
             dataloader_num_workers = 2,
+            lr_scheduler_type="linear",
+            learning_rate = self.learning_rate,
             disable_tqdm=True # not diplaying a progress bar
         )
 

@@ -4,6 +4,7 @@ from attacks import *
 import torch
 # import datasets
 import os
+import sys
 from options import *
 from utils import *
 from attacks_impl import *
@@ -12,18 +13,19 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 # Parsing input arguments and initilizing variables
 args = Options()
-args, unknown_args = args.parser.parse_known_args()
+args, _ = args.parser.parse_known_args()
+all_args = sys.argv[1:]
 # args = args.parser.parse_args()
 # dataset_name = args.dataset
-task = args.task
+# task = args.task
 torch_num_threads = int(args.torch_num_threads)
 torch.set_num_threads(torch_num_threads) 
 max_sequence_length = int(args.max_sequence_length)
 seed = int(args.seed)
 fix_seed(seed)
-model_name = args.model_name
-use_float16 = bool(args.use_float16)
-num_epochs = float(args.num_epochs)
+# model_name = args.model_name
+# use_float16 = bool(args.use_float16)
+# num_epochs = float(args.num_epochs)
 use_data_percentage = int(args.use_data_percentage)
 load_model_dir = args.load_model_dir
 attack_name = args.attack_name
@@ -36,29 +38,27 @@ output_dir = args.output_dir
 log_dir = args.log_dir
 
 #### loading a dataset
-wdataset = Dataset(unknown_args)
+wdataset = Dataset(all_args)
 wdataset.train_test_split(use_data_percentage)
 
-model_options = {
-    'model_name': model_name,
-    'task': task,
-    'max_sequence_length': max_sequence_length,
-    'use_float16': use_float16,
-    'load_model_dir': load_model_dir,
-    'output_dir': output_dir,
-    'log_dir' : log_dir
-}
+# model_options = {
+#     'model_name': model_name,
+#     'task': task,
+#     'max_sequence_length': max_sequence_length,
+#     'use_float16': use_float16,
+#     'load_model_dir': load_model_dir,
+#     'output_dir': output_dir,
+#     'log_dir' : log_dir
+# }
 
 if run_mode == 'fine-tunning':
-    print("..fine-mapping of pretrained NLP model")
+    print("..fine-tunning of pretrained NLP model")
     #### fine-tuning of pretrained NLP model
-    # wmodel = pretrained_models(model_name, task, max_sequence_length, load_model_dir, output_dir, log_dir)
-    wmodel = PretrainedModels(model_options)
-    trainer, train_data, test_data = wmodel.fine_tune(wdataset, num_epochs)
+    wmodel = PretrainedModels(all_args)
+    trainer, train_data, test_data = wmodel.fine_tune(wdataset)
 
 elif run_mode == 'attack':
-    # wmodel = pretrained_models(model_name, task, max_sequence_length, load_model_dir)
-    wmodel = PretrainedModels(model_options)
+    wmodel = PretrainedModels(all_args)
     trainer, model, tokenizer = wmodel.prepare_model(wdataset)
     attack_options = {
         'load_model_dir': load_model_dir,
@@ -70,8 +70,8 @@ elif run_mode == 'attack':
         'num_shadow_models' : num_shadow_models,
         'max_sequence_length' : max_sequence_length,
         'output_dir' : output_dir,
-        'wdataset' : wdataset,
-        'model_options' : model_options
+        'wdataset' : wdataset
+        # 'model_options' : model_options
     }
     print(f"..performing attack {attack_name}")
     #### performing an attack
@@ -80,7 +80,7 @@ elif run_mode == 'attack':
     attack_class = getattr(attack_class, f"Attack{attack_class_name}")
     if not attack_class:
         raise ValueError(f"Attack class '" + f"Attack{attack_class_name}" + "' not found.")
-    wattack = attack_class(attack_name, num_trials, unknown_args)
+    wattack = attack_class(attack_name, num_trials, all_args)
     mia_metrics = wattack.perform_attack(wdataset, attack_options)
 
 

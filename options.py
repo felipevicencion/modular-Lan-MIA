@@ -9,16 +9,16 @@ class Options():
         # general arguments
         # self.parser.add_argument("-dataset", "--dataset", help = "specifies a dataset on which an attack is to be performed", default = "IMDb")
         self.parser.add_argument("-torch_num_threads", "--torch-num-threads", help = "number of CPU threads PyTorch uses for parallel operations", default = 1)
-        self.parser.add_argument("-model_name", "--model-name", help = "name of the pretrained NLP model", default = "roberta-base")
-        self.parser.add_argument("-task", "--task", help = "descibes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
+        # self.parser.add_argument("-model_name", "--model-name", help = "name of the pretrained NLP model", default = "roberta-base")
+        # self.parser.add_argument("-task", "--task", help = "descibes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
         self.parser.add_argument("-max_sequence_length", "--max-sequence-length", help = "maximum sequence length", default = 512)
         self.parser.add_argument("-seed", "--seed", help = "setting seed value for all random calculations", default = 0)
 
         ## model parameters
-        self.parser.add_argument("-use_float16", "--use-float16", help = "whether or not to store weight in 16 bit floats", default = False)
+        # self.parser.add_argument("-use_float16", "--use-float16", help = "whether or not to store weight in 16 bit floats", default = False)
 
         ## fine-tuning parameters
-        self.parser.add_argument("-num_epochs", "--num-epochs", help = "number of epochs used in the fine-tuning of the model", default = 5)
+        # self.parser.add_argument("-num_epochs", "--num-epochs", help = "number of epochs used in the fine-tuning of the model", default = 5)
         self.parser.add_argument("-load_model_dir", "--load-model-dir", help = "directory from which a trained model is loaded", default = None)
         self.parser.add_argument("-log_dir", "--log-dir", help = "location of the logfile", default = None)
         self.parser.add_argument("-output_dir", "--output-dir", help = "location of the output directory", default = None)  
