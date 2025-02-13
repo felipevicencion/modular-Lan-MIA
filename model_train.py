@@ -7,6 +7,8 @@ from utils import *
 from dataset import *
 # from accelerate import Accelerator
 import argparse
+import os 
+import json
 
 class PretrainedModels:
 
@@ -228,5 +230,34 @@ class PretrainedModels:
 
         train_res = trainer.train()
         print("..train ended")
+
+        # Create fine-tuning details object based on instance attributes
+        fine_tuning_details = {
+            "output_dir": self.output_dir,
+            "num_train_epochs": self.num_epochs,
+            "per_device_train_batch_size": self.per_device_train_batch_size,
+            "per_device_eval_batch_size": self.per_device_eval_batch_size,
+            "gradient_accumulation_steps": 1,
+            "eval_strategy": "epoch",
+            "save_strategy": "epoch",
+            "load_best_model_at_end": True,
+            "warmup_ratio": self.warmup_ratio,
+            "weight_decay": self.weight_decay,
+            "logging_steps": 8,
+            "fp16": True,
+            "logging_dir": self.log_dir,
+            "dataloader_num_workers": 2,
+            "lr_scheduler_type": "linear",
+            "learning_rate": self.learning_rate,
+            "disable_tqdm": True 
+        }
+
+        # Define output file path for saving
+        output_file_path = os.path.join(self.output_dir, "fine_tuning_details.json")
+        os.makedirs(self.output_dir, exist_ok=True)
+        # Save fine-tuning details to JSON file
+        with open(output_file_path, "w") as json_file:
+            json.dump(fine_tuning_details, json_file, indent=4)
+        print(f"..fine-tuning details saved to {output_file_path}")
 
         return trainer, train_data, test_data
