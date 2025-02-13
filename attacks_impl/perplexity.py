@@ -6,13 +6,13 @@ from attacks import *
 
 class AttackPerplexity(ThresholdAttack):
 
-    def __init__(self, attack_name, num_trials, unknown_args):
-        super().__init__(attack_name, num_trials)
+    def __init__(self, input_args):
+        super().__init__(input_args)
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
         self.model = attack_options['model']
-        self.score_thr = attack_options['score_thr']
-        self.max_length = attack_options['max_length']
+        # self.score_thr = attack_options['score_thr']
+        # self.max_length = attack_options['max_length']
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)

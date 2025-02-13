@@ -6,6 +6,7 @@ import pandas as pd
 from utils import *
 from dataset import *
 # from accelerate import Accelerator
+import argparse
 
 class PretrainedModels:
 
@@ -64,11 +65,12 @@ class PretrainedModels:
         if self.task == 'classification':
             try:
                 self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir)
-                self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
+                self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
+                # self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
             except Exception as e:
                 print(f"Error: {e}")
                 print("Ensure you are using the correct directory for loading the model.")
-                print(f"..model {model} is loaded")
+            print(f"..model {self.model_name} is loaded")
         elif self.task == 'generative':
             print(f"..loading {self.task} model: {self.model_name}")
             if "roberta" in self.model_name:

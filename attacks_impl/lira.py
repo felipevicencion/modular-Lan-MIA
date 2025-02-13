@@ -8,13 +8,13 @@ from model_train import *
 
 class LiRA(ShadowAttack):
 
-    def __init__(self, attack_name, num_trials, unknown_args):
-        super().__init__(attack_name, num_trials)
+    def __init__(self, input_args):
+        super().__init__(input_args)
         attack_options_parser = argparse.ArgumentParser(description="lira options parser")
         attack_options_parser.add_argument("-lira_variant", "--lira-variant", type=str, help="either 'online' or 'offline'", default='online')
         attack_options_parser.add_argument("-global_vars", "--global-vars", type=bool, help="determines if the loss distribution variance should be estimated globally or per-sample", default='online')
         attack_options_parser.add_argument("-use_train_percentage", "--use-train-percentage", type=bool, help="determines the percentage of samples that are used in each shadow model training", default=50)
-        attack_args, _ = attack_options_parser.parse_known_args(unknown_args)
+        attack_args, _ = attack_options_parser.parse_known_args(input_args)
         self.lira_variant = attack_args.lira_variant
         self.global_vars = attack_args.global_vars
         self.use_train_percentage = attack_args.use_train_percentage
@@ -85,19 +85,19 @@ class LiRA(ShadowAttack):
             in_losses = []
             out_losses = []
             for i, trainer in enumerate(trainers):
-            with torch.no_grad():
-                outputs = trainer.model(input_ids, labels=input_ids)
-                loss = outputs.loss.item()  
-                logit_transformed_loss = np.exp(-loss)
-                logit_transformed_loss = np.clip(logit_transformed_loss, 1e-8, 1 - 1e-8) 
-                logit_transformed_loss = np.log(logit_transformed_loss / (1 - logit_transformed_loss)) 
-                if in_indices[ind_ex][i] == 1:
-                    in_losses.append(logit_transformed_loss)
-                elif out_indices[ind_ex][i] == 1:
-                    out_losses.append(logit_transformed_loss)
-            in_mean, in_var = fit_gaussian(in_losses)
-            out_mean, out_var = fit_gaussian(out_losses)
-            loss_value = evaluate_loss_at_sample(attack_options['trainer'], self.tokenizer, input_ids, self.device)
+                with torch.no_grad():
+                    outputs = trainer.model(input_ids, labels=input_ids)
+                    loss = outputs.loss.item()  
+                    logit_transformed_loss = np.exp(-loss)
+                    logit_transformed_loss = np.clip(logit_transformed_loss, 1e-8, 1 - 1e-8) 
+                    logit_transformed_loss = np.log(logit_transformed_loss / (1 - logit_transformed_loss)) 
+                    if in_indices[ind_ex][i] == 1:
+                        in_losses.append(logit_transformed_loss)
+                    elif out_indices[ind_ex][i] == 1:
+                        out_losses.append(logit_transformed_loss)
+            in_mean, in_var = self.fit_gaussian(in_losses)
+            out_mean, out_var = self.fit_gaussian(out_losses)
+            loss_value = self.evaluate_loss_at_sample(attack_options['trainer'], self.tokenizer, input_ids, self.device)
             loss_value_likelihood_in = scipy.stats.norm(loss_value, in_mean, np.sqrt(in_var))
             loss_value_likelihood_out = scipy.stats.norm(loss_value, out_mean, np.sqrt(out_var))
             ratio = loss_value_likelihood_in / loss_value_likelihood_out

@@ -6,17 +6,17 @@ from attacks import *
 
 class AttackMinkPlusPlus(ThresholdAttack):
 
-    def __init__(self, attack_name, num_trials, unknown_args):
-        super().__init__(attack_name, num_trials)
+    def __init__(self, input_args):
+        super().__init__(input_args)
         attack_options_parser = argparse.ArgumentParser(description="mink options parser")
         attack_options_parser.add_argument("-mink_plus_plus_ratio", "--mink-plus-plus-ratio", type=float, help="percentage determining the count of lowest probable tokens considered for mink plus plus score", default=0.2)
-        attack_args, _ = attack_options_parser.parse_known_args(unknown_args)
+        attack_args, _ = attack_options_parser.parse_known_args(input_args)
         self.mink_ratio = attack_args.mink_ratio
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
         self.model = attack_options['model']
-        self.score_thr = attack_options['score_thr']
-        self.max_length = attack_options['max_length']
+        # self.score_thr = attack_options['score_thr']
+        # self.max_length = attack_options['max_length']
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
@@ -31,7 +31,7 @@ class AttackMinkPlusPlus(ThresholdAttack):
             mu = (probs * log_probs).sum(-1)
             sigma = (probs * torch.square(log_probs)).sum(-1) - torch.square(mu)
             mink_plus = (token_log_probs - mu) / sigma.sqrt()
-            k_length = int(len(mink_plus) * ratio)
+            k_length = int(len(mink_plus) * self.mink_ratio)
             topk = np.sort(mink_plus.cpu())[:k_length]
             mink_plus_score = np.mean(topk).item()
-            self.membership_pred[ind_ex] = int(mink_score >= self.score_thr)
+            self.membership_pred[ind_ex] = int(mink_plus_score >= self.score_thr)

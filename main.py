@@ -62,14 +62,14 @@ elif run_mode == 'attack':
     trainer, model, tokenizer = wmodel.prepare_model(wdataset)
     attack_options = {
         'load_model_dir': load_model_dir,
-        'confidence_thr': 0.9,
+        # 'confidence_thr': 0.9,
         'tokenizer' : tokenizer,
         'trainer' : trainer,
-        'score_thr' : score_thr,
+        # 'score_thr' : score_thr,
         'model' : model,
-        'num_shadow_models' : num_shadow_models,
-        'max_sequence_length' : max_sequence_length,
-        'output_dir' : output_dir,
+        # 'num_shadow_models' : num_shadow_models,
+        # 'max_sequence_length' : max_sequence_length,
+        # 'output_dir' : output_dir,
         'wdataset' : wdataset
         # 'model_options' : model_options
     }
@@ -80,7 +80,8 @@ elif run_mode == 'attack':
     attack_class = getattr(attack_class, f"Attack{attack_class_name}")
     if not attack_class:
         raise ValueError(f"Attack class '" + f"Attack{attack_class_name}" + "' not found.")
-    wattack = attack_class(attack_name, num_trials, all_args)
+    # wattack = attack_class(attack_name, num_trials, all_args)
+    wattack = attack_class(all_args)
     mia_metrics = wattack.perform_attack(wdataset, attack_options)
 
 

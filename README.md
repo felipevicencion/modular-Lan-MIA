@@ -91,8 +91,9 @@ Once {num-trials} attacks are performed we summarize theit effectivness through 
 | Model name | Description |
 | --- | --- |
 | `roberta-base` | RoBERTa-base model is a pre-trained transformer model designed for natural language understanding tasks. It builds on BERT by using larger datasets, training for longer time, removing next-sentence prediction objective and by training with dynamic masking.
+| `bert-base-multilingual-cased` | mBERT (Multilingual BERT) is a transformer model pretrained on 104 languages using cased text (it distinguishes between uppercase and lowercase letters). It is commonly used for multilingual NLP tasks such as classification, named entity recognition (NER), and embeddings. It contains ~110 million parameters and models size is around 714MB. |
 
-It supports a number of generative models that can be loaded using `transformers.AutoModelForCausalLM.from_pretrained`. These include GPT-style autoregressive models models like GPT-2, GPT-Neo, GPT-J, and GPT-NeoX-20B, but also supports Meta’s LLaMA models and the multilingual Bloom model as well as Falcon-7B, Falcon-40B, Meta’s OPT series, Pythia etc.
+Our framework supports a number of generative models that can be loaded using `transformers.AutoModelForCausalLM.from_pretrained`. These include GPT-style autoregressive models models like GPT-2, GPT-Neo, GPT-J, and GPT-NeoX-20B, but also supports Meta’s LLaMA models and the multilingual Bloom model as well as Falcon-7B, Falcon-40B, Meta’s OPT series, Pythia etc.
 
 # Covered attacks
 | Attack name | Keyword | Publication link | Description |

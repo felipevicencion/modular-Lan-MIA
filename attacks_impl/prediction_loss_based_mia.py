@@ -5,8 +5,8 @@ from attacks import *
 
 class AttackPredictionLossBasedMia(MetricAttack):
 
-    def __init__(self, attack_name, num_trial, unknown_args):
-        super().__init__(attack_name, num_trial)
+    def __init__(self, input_args):
+        super().__init__(input_args)
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
         # find average loss over iterations and over samples

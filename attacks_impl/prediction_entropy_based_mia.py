@@ -6,8 +6,8 @@ from attacks import *
 
 class AttackPredictionEntropyBasedMia(ThresholdAttack):
 
-    def __init__(self, attack_name, num_trials, unknown_args):
-        super().__init__(attack_name, num_trials)
+    def __init__(self, input_args):
+        super().__init__(input_args)
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
         trainer = attack_options['trainer']

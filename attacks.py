@@ -1,5 +1,5 @@
 import transformers 
-from sklearn.metrics import accuracy_score, precision_recall_fscore_support, recall_score, f1_score, accuracy_score, precision_score
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, recall_score, f1_score, accuracy_score, precision_score, roc_curve, auc
 import numpy as np
 import torch
 import datasets
@@ -8,13 +8,33 @@ from utils import *
 from dataset import *
 import scipy
 import zlib
+import matplotlib.pyplot as plt
+import argparse
     
 class Attack:
 
-    def __init__(self, attack_name, num_trials):
-            self.attack_name = attack_name
-            self.num_trials = num_trials
-            self.num_trials_per_cat = int( 0.5 * num_trials )
+    def __init__(self, input_args):
+            attack_options_parser = argparse.ArgumentParser(description="attack options parser")
+            attack_options_parser.add_argument("-attack_name", "--attack-name", type=str, help = "Name of an attack to be performed", default = "prediction_loss_based_mia")
+            attack_options_parser.add_argument("-num_trials", "--num-trials", type=int, help = "Number of trials of an attack to be performed", default = 500)
+            attack_options_parser.add_argument("-score_thr", "--score-thr", type=float, help = "Threshold to be used for attacks based on scores", default = 1.002)
+            attack_options_parser.add_argument("-max_sequence_length", "--max-sequence-length", type=int, help = "Maximum sequence length", default = 512)
+            attack_options_parser.add_argument("-output_dir", "--output-dir", type=str, help = "Location of the output directory", default = None)  
+            attack_options_parser.add_argument("-confidence_thr", "--confidence-thr", type=float, help = "Confidence threshold for MIA attacks", default = 0.9)
+            attack_options_parser.add_argument("--num_shadow_models", "--num-shadow-models", type=int, help = "Number of shadow models to be created", default = 10)
+
+            attack_args, _ = attack_options_parser.parse_known_args(input_args)
+            self.attack_name = attack_args.attack_name
+            self.num_trials = attack_args.num_trials
+            self.score_thr = attack_args.score_thr
+            self.max_sequence_length = attack_args.max_sequence_length
+            self.output_dir = attack_args.output_dir
+            self.confidence_thr = attack_args.confidence_thr
+            self.num_shadow_models = attack_args.num_shadow_models
+            
+            # self.attack_name = attack_name
+            # self.num_trials = num_trials
+            self.num_trials_per_cat = int( 0.5 * self.num_trials )
             self.mia_metrics = {}
 
     def calculate_mia_metrics(self, true_labels, predicted_labels):
@@ -108,20 +128,20 @@ class Attack:
 # subclass representing shadow-type attacks
 class ShadowAttack(Attack):
 
-    def __init__(self, attack_name, num_trials):
-        super().__init__(attack_name, num_trials)
+    def __init__(self, input_args):
+        super().__init__(input_args)
 
 # subclass representing metric-type attacks
 class MetricAttack(Attack):
 
-    def __init__(self, attack_name, num_trials):
-        super().__init__(attack_name, num_trials)
+    def __init__(self, input_args):
+        super().__init__(input_args)
 
 # subclass of metric attacks based on thresholding
 class ThresholdAttack(MetricAttack):
 
-    def __init__(self, attack_name, num_trials):
-        super().__init__(attack_name, num_trials)
+    def __init__(self, input_args):
+        super().__init__(input_args)
 
     def thresholds_comp(scores, thrs):
         """
