@@ -7,7 +7,7 @@ class Options():
 
     def initialize_parser(self):
         # general arguments
-        self.parser.add_argument("-dataset", "--dataset", help = "specifies a dataset on which an attack is to be performed", default = "IMDb")
+        # self.parser.add_argument("-dataset", "--dataset", help = "specifies a dataset on which an attack is to be performed", default = "IMDb")
         self.parser.add_argument("-torch_num_threads", "--torch-num-threads", help = "number of CPU threads PyTorch uses for parallel operations", default = 1)
         self.parser.add_argument("-model_name", "--model-name", help = "name of the pretrained NLP model", default = "roberta-base")
         self.parser.add_argument("-task", "--task", help = "descibes the task which a model was trained for: 'classification' or 'generative'", default = "classification")

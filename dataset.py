@@ -3,11 +3,17 @@
 # from torchtext.datasets import IMDB
 import datasets
 import torch
+import argparse
 
 class Dataset:
 
-        def __init__(self, dataset_name):
-            self.dataset_name = dataset_name
+        def __init__(self, input_args):
+            dataset_options_parser = argparse.ArgumentParser(description="dataset options parser")
+            dataset_options_parser.add_argument("-datatset_path", "--dataset-path", type=str, help="Path to the HF dataset, either a local directory or a dataset repository on the HF hub (list all available datasets with huggingface_hub.list_datasets)", default='imdb')
+            dataset_options_parser.add_argument("-dataset_name", "--dataset-name", type=str, help="Defining the name of the dataset configuration", default=None)
+            dataset_args, _ = dataset_options_parser.parse_known_args(input_args)
+            self.dataset_path = dataset_args.dataset_path
+            self.dataset_name = dataset_args.dataset_name
             self.train_data = None # same as member data
             self.indices_train = None
             self.test_data = None # same as non-member data
@@ -41,7 +47,7 @@ class Dataset:
                 target_dataset.remove(sample)
 
         def train_test_split(self, use_data_percentage):
-             """
+            """
             Load a specified dataset, split it into training and testing sets, and subset 
             the data based on a given percentage.
         
@@ -58,26 +64,23 @@ class Dataset:
                 - self.indices_train: Collection of randomly selected indices for the training subset.
                 - self.indices_test: Collection of randomly selected indices for the testing subset.
             """
+            # if self.dataset_name == 'IMDb':
 
-            if self.dataset_name == 'IMDb':
+            #     self.dataset_name_internal = 'imdb'
 
-                self.dataset_name_internal = 'imdb'
+            # elif self.dataset_name == 'Yelp':
 
-            elif self.dataset_name == 'Yelp':
-
-                self.dataset_name_internal = 'yelp_review_full'
+            #     self.dataset_name_internal = 'yelp_review_full'
                 
-            else:
+            # else:
                 
-                raise ValueError(f"{self.dataset_name} dataset is not available!")
-
-            train_data, test_data = datasets.load_dataset(self.dataset_name_internal, split =['train', 'test'])
-
+            #     raise ValueError(f"{self.dataset_name} dataset is not available!")
+            print(f"..loading dataset {self.dataset_path}")
+            train_data, test_data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split =['train', 'test'])
             # subsetting train and test data to 'use_data_percentage'
             num_included_samples_train = int(len(train_data) * float(use_data_percentage) / 100)
             self.indices_train = torch.randperm(len(train_data))[:num_included_samples_train].tolist()
             self.train_data = train_data.select(self.indices_train)
-
             num_included_samples_test = int(len(test_data) * float(use_data_percentage) / 100)
             self.indices_test = torch.randperm(len(test_data))[:num_included_samples_test].tolist()
             self.test_data = test_data.select(self.indices_test)

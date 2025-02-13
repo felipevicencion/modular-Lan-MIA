@@ -14,7 +14,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 args = Options()
 args, unknown_args = args.parser.parse_known_args()
 # args = args.parser.parse_args()
-dataset_name = args.dataset
+# dataset_name = args.dataset
 task = args.task
 torch_num_threads = int(args.torch_num_threads)
 torch.set_num_threads(torch_num_threads) 
@@ -28,26 +28,15 @@ use_data_percentage = int(args.use_data_percentage)
 load_model_dir = args.load_model_dir
 attack_name = args.attack_name
 num_trials = int(args.num_trials)
-score_thr = parse_thresholds(args.score_thr)
+score_thr = parse_thresholds(str(args.score_thr))
 # score_thr = float(args.score_thr)
 num_shadow_models = int(args.num_shadow_models)
 run_mode = args.run_mode
 output_dir = args.output_dir
 log_dir = args.log_dir
 
-# dataset_name = "IMDb"
-# model_name = "roberta-base"
-# max_sequence_length = 512
-# attack_name = "prediction_loss_based_mia"
-# num_trials = 500
-# load_model_dir = None
-# num_epochs = 1
-# log_dir = '/nfs/scistore17/robingrp/adepope/DataExtractionAttacks/logfiles'
-# output_dir = '/nfs/scistore17/robingrp/adepope/DataExtractionAttacks/output'
-
-print(f"..loading dataset {dataset_name}")
 #### loading a dataset
-wdataset = Dataset(dataset_name)
+wdataset = Dataset(unknown_args)
 wdataset.train_test_split(use_data_percentage)
 
 model_options = {
@@ -84,11 +73,8 @@ elif run_mode == 'attack':
         'wdataset' : wdataset,
         'model_options' : model_options
     }
-    # print(attack_options)
     print(f"..performing attack {attack_name}")
     #### performing an attack
-    # attack_class = globals().get(f"attack_{attack_name}")
-    # module_name = "attacks_impl.zlib"
     attack_class_name = capitalize_after_underscore(attack_name)
     attack_class = importlib.import_module("attacks_impl." + f"{attack_name}")
     attack_class = getattr(attack_class, f"Attack{attack_class_name}")
