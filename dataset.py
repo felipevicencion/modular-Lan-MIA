@@ -4,6 +4,7 @@
 import datasets
 import torch
 import argparse
+import numpy as np
 
 class Dataset:
 
@@ -76,7 +77,10 @@ class Dataset:
                 
             #     raise ValueError(f"{self.dataset_name} dataset is not available!")
             print(f"..loading dataset {self.dataset_path}")
-            train_data, test_data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split =['train', 'test'])
+            if self.dataset_name is not None:
+                train_data, test_data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split =['train', 'test'])
+            else:
+                train_data, test_data = datasets.load_dataset(self.dataset_path, split =['train', 'test'])
             # subsetting train and test data to 'use_data_percentage'
             num_included_samples_train = int(len(train_data) * float(use_data_percentage) / 100)
             self.indices_train = torch.randperm(len(train_data))[:num_included_samples_train].tolist()
@@ -85,7 +89,7 @@ class Dataset:
             self.indices_test = torch.randperm(len(test_data))[:num_included_samples_test].tolist()
             self.test_data = test_data.select(self.indices_test)
 
-        def split_into_k_avoid_ind(k):
+        def split_into_k_avoid_ind(self, k):
             """
             Splits the dataset into `k` subsets while avoiding indices already used 
             in the training and testing split. This method creates shadow datasets 

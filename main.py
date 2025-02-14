@@ -20,7 +20,7 @@ all_args = sys.argv[1:]
 # task = args.task
 torch_num_threads = int(args.torch_num_threads)
 torch.set_num_threads(torch_num_threads) 
-max_sequence_length = int(args.max_sequence_length)
+# max_sequence_length = int(args.max_sequence_length)
 seed = int(args.seed)
 fix_seed(seed)
 # model_name = args.model_name
@@ -29,10 +29,10 @@ fix_seed(seed)
 use_data_percentage = int(args.use_data_percentage)
 load_model_dir = args.load_model_dir
 attack_name = args.attack_name
-num_trials = int(args.num_trials)
-score_thr = parse_thresholds(str(args.score_thr))
+# num_trials = int(args.num_trials)
+# score_thr = parse_thresholds(str(args.score_thr))
 # score_thr = float(args.score_thr)
-num_shadow_models = int(args.num_shadow_models)
+# num_shadow_models = int(args.num_shadow_models)
 run_mode = args.run_mode
 output_dir = args.output_dir
 log_dir = args.log_dir
@@ -55,7 +55,7 @@ if run_mode == 'fine-tunning':
     print("..fine-tunning of pretrained NLP model")
     #### fine-tuning of pretrained NLP model
     wmodel = PretrainedModels(all_args)
-    trainer, train_data, test_data = wmodel.fine_tune(wdataset)
+    wmodel.fine_tune(wdataset)
 
 elif run_mode == 'attack':
     wmodel = PretrainedModels(all_args)

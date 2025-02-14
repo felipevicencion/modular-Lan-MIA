@@ -26,7 +26,8 @@ class Attack:
             attack_args, _ = attack_options_parser.parse_known_args(input_args)
             self.attack_name = attack_args.attack_name
             self.num_trials = attack_args.num_trials
-            self.score_thr = attack_args.score_thr
+            self.score_thr = parse_thresholds(str(args.score_thr))
+            # self.score_thr = attack_args.score_thr
             self.max_sequence_length = attack_args.max_sequence_length
             self.output_dir = attack_args.output_dir
             self.confidence_thr = attack_args.confidence_thr
@@ -106,7 +107,6 @@ class Attack:
             attack_options (dict): A dictionary containing general options and parameters 
                                    required for the attack, such as:
                                    - 'tokenizer': Tokenizer function for text processing.
-                                   - 'max_sequence_length': Maximum sequence length for tokenized inputs.
                                    - Other attack-specific parameters (e.g., thresholds).
     
         Returns:
@@ -115,7 +115,9 @@ class Attack:
         train_data, test_data = wdataset.get_train_test()
         # attack_options is a dictionary containing additional inputs and parameters required to performa MIAs such as thresold values and other
         if self.attack_name not in ['recall', 'zlib', 'mink']:
-            train_data, test_data = tokenize_data(attack_options['tokenizer'], train_data, test_data, attack_options['max_sequence_length'])
+            # train_data, test_data = tokenize_data(attack_options['tokenizer'], train_data, test_data, attack_options['max_sequence_length'])
+            train_data = tokenize_data(attack_options['tokenizer'], train_data, self.max_sequence_length)
+            test_data = tokenize_data(attack_options['tokenizer'], test_data, self.max_sequence_length)
         shf_train_data = train_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         shf_test_data = test_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])

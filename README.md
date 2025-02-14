@@ -44,7 +44,18 @@ python3 main.py --dataset IMDb --num-epochs 10 --attack-name prediction_loss_bas
 | Option | Description | Default |
 | --- | --- | --- |
 | `--num-epochs` | number of epochs used in the fine-tuning of the model | 5 |
-| `--use-data-percentage` | percentage of available train samples used to fine-tune the model | 100 |
+| `--use-data-percentage` | percentage of available train samples used to fine-tune the model           | 100   |
+| `--per-device-train-batch-size` | Per device training batch size                                      | 16    |
+| `--per-device-eval-batch-size` | Per device evaluation batch size                                     | 16    |
+| `--learning-rate`           | Learning rate used in fine-tuning                                       | 2e-5  |
+| `--weight-decay`            | Weight decay parameter used during fine-tuning                          | 0.01  |
+| `--warmup-ratio`            | Warm-up ratio parameter used during fine-tuning                         | 0.1   |
+| `--val-size`                | Size of the validation set as a ratio of the training set               | 0.1   |
+| `--log-dir`                 | Directory location for storing logs                                     | None  |
+| `--output-dir`              | Directory for storing output files                                      | None  |
+| `--load-model-dir`          | Directory from which to load a pretrained or previously trained model   | None  |
+| `--use-float16`             | Whether to store weights in 16-bit floats                               | False |
+
 
 # Attack options
 

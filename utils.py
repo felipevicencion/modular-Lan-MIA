@@ -184,25 +184,42 @@ def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device)
     return recall_get_all_prob(labels, loss, logits)
 
 # function to tokenize train and test data
-def tokenize_data(tokenizer, train_data, test_data, max_sequence_length):
+def tokenize_data(tokenizer, data, max_sequence_length):
     """
     Tokenizes the train and test datasets.
 
     Parameters:
         tokenizer: Tokenizer to convert text into input IDs, attention masks, etc.
-        train_data: Training dataset to be tokenized.
-        test_data: Testing dataset to be tokenized.
+        data: Dataset to be tokenized.
         max_sequence_length (int): Maximum token length for truncation and padding.
 
     Returns:
-        tuple: Tokenized train and test datasets.
+        tuple: Tokenized dataset.
     """
     tokenize_data = lambda batch: tokenizer(batch['text'], max_length=max_sequence_length, padding=True, truncation=True)
-    train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
-    test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
-    train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
-    test_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
-    return train_data, test_data
+    data = data.map(tokenize_data, batched=True, batch_size=len(data))
+    data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
+    return data
+
+# def tokenize_data(tokenizer, train_data, test_data, max_sequence_length):
+#     """
+#     Tokenizes the train and test datasets.
+
+#     Parameters:
+#         tokenizer: Tokenizer to convert text into input IDs, attention masks, etc.
+#         train_data: Training dataset to be tokenized.
+#         test_data: Testing dataset to be tokenized.
+#         max_sequence_length (int): Maximum token length for truncation and padding.
+
+#     Returns:
+#         tuple: Tokenized train and test datasets.
+#     """
+#     tokenize_data = lambda batch: tokenizer(batch['text'], max_length=max_sequence_length, padding=True, truncation=True)
+#     train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
+#     test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
+#     train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
+#     test_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
+#     return train_data, test_data
 
 def capitalize_after_underscore(input_string):
     """

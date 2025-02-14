@@ -27,7 +27,8 @@ class PretrainedModels:
         model_options_parser.add_argument("-learning_rate", "--learning-rate", type=float, help = "Learning rate used in fine-tunning", default = 2e-5)
         model_options_parser.add_argument("-weight_decay", "--weight-decay", type=float, help = "Weight decay parameter used in fine-tunning", default = 0.01)
         model_options_parser.add_argument("-warmup_ratio", "--warmup-ratio", type=float, help = "Warmup ratio parameter used in fine-tunning", default = 0.1)
-
+        model_options_parser.add_argument("-val_size", "--val-size", type=float, help = "Size of the validation set as ratio of the train set", default = 0.1)
+     
         model_args, _ = model_options_parser.parse_known_args(input_args)
         self.model_name = model_args.model_name
         self.max_sequence_length = model_args.max_sequence_length
@@ -42,6 +43,7 @@ class PretrainedModels:
         self.learning_rate = model_args.learning_rate
         self.weight_decay = model_args.weight_decay
         self.warmup_ratio = model_args.warmup_ratio
+        self.val_size = model_args.val_size
         # self.model_name = model_options['model_name']
         # self.max_sequence_length = model_options['max_sequence_length']
         # self.output_dir = model_options['output_dir']
@@ -64,17 +66,20 @@ class PretrainedModels:
         Raises:
             Exception: If an error occurs during model or tokenizer loading.
         """
+        print(f"..loading {self.task} model: {self.model_name}")
         if self.task == 'classification':
             try:
-                self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir)
+                if self.load_model_dir is not None:
+                    self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir)
+                else:
+                    self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name)
                 self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
                 # self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
             except Exception as e:
                 print(f"Error: {e}")
-                print("Ensure you are using the correct directory for loading the model.")
-            print(f"..model {self.model_name} is loaded")
+                print("Ensure you are using the correct directory or model name for loading the model.")
+
         elif self.task == 'generative':
-            print(f"..loading {self.task} model: {self.model_name}")
             if "roberta" in self.model_name:
                 self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
                 self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
@@ -116,13 +121,20 @@ class PretrainedModels:
             self.model.config.num_labels = self.num_classes
             print(f"..num_classes = {self.num_classes}")
             
-        train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data, self.max_sequence_length)
+        # splitting train set into validation set and exclusively train set
+        train_valid = train_data.train_test_split(test_size=self.val_size)
+        # train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data, self.max_sequence_length)
+        test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
+        val_data = train_valid["test"]
+        train_data = train_valid["train"]
+        train_data = tokenize_data(self.tokenizer, train_data, self.max_sequence_length)
+        val_data = tokenize_data(self.tokenizer, val_data, self.max_sequence_length)
 
         trainer = transformers.Trainer(
             model=self.model,
             compute_metrics=self.compute_metrics,
             train_dataset=train_data,
-            eval_dataset=test_data
+            eval_dataset=val_data
         )
         return trainer, self.model, self.tokenizer
 
@@ -185,17 +197,15 @@ class PretrainedModels:
         self.num_classes = len(set(train_data.to_pandas()["label"]))
         self.model.config.num_labels = self.num_classes
         print(f"..num_classes = {self.num_classes}")
-        # model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name, num_labels = self.num_classes)
-        # tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
-        # tokenize_data = lambda batch: tokenizer(batch['text'], padding=True, truncation=True)
-        # train_data = train_data.map(tokenize_data, batched=True, batch_size=len(train_data))
-        # test_data = test_data.map(tokenize_data, batched=True, batch_size=len(test_data))
 
-        # train_data, test_data = self.tokenize_data(train_data, test_data)
-        train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data)
-        
-        # train_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
-        # test_data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
+        # splitting train set into validation set and exclusively train set
+        train_valid = train_data.train_test_split(test_size=self.val_size)
+        test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
+        val_data = train_valid["test"]
+        train_data = train_valid["train"]
+        val_data = tokenize_data(self.tokenizer, val_data, self.max_sequence_length)
+        train_data = tokenize_data(self.tokenizer, train_data, self.max_sequence_length)
+        test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
 
         # define the training arguments
         training_args = transformers.TrainingArguments(
@@ -212,7 +222,7 @@ class PretrainedModels:
             logging_steps = 8,
             fp16 = True,
             logging_dir=self.log_dir,
-            dataloader_num_workers = 2,
+            dataloader_num_workers = 1,
             lr_scheduler_type="linear",
             learning_rate = self.learning_rate,
             disable_tqdm=True # not diplaying a progress bar
@@ -223,13 +233,21 @@ class PretrainedModels:
             args=training_args,
             compute_metrics=self.compute_metrics,
             train_dataset=train_data,
-            eval_dataset=test_data
+            eval_dataset=val_data
         )
 
         print(f"device = {training_args.device}")
 
         train_res = trainer.train()
         print("..train ended")
+
+        best_model_file_path = os.path.join(self.output_dir, "best_performing_model")
+        os.makedirs(self.output_dir, exist_ok=True)
+        trainer.save_model(best_model_file_path)
+    
+        print("..metric evaluation on the test set")
+        trainer.eval_dataset = test_data
+        eval_test_results = trainer.evaluate()
 
         # Create fine-tuning details object based on instance attributes
         fine_tuning_details = {
@@ -246,7 +264,7 @@ class PretrainedModels:
             "logging_steps": 8,
             "fp16": True,
             "logging_dir": self.log_dir,
-            "dataloader_num_workers": 2,
+            "dataloader_num_workers": 1,
             "lr_scheduler_type": "linear",
             "learning_rate": self.learning_rate,
             "disable_tqdm": True 
@@ -259,5 +277,3 @@ class PretrainedModels:
         with open(output_file_path, "w") as json_file:
             json.dump(fine_tuning_details, json_file, indent=4)
         print(f"..fine-tuning details saved to {output_file_path}")
-
-        return trainer, train_data, test_data
