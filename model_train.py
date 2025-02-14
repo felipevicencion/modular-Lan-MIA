@@ -22,12 +22,13 @@ class PretrainedModels:
         model_options_parser.add_argument("-use_float16", "--use-float16", type=bool, help = "Whether or not to store weight in 16 bit floats", default = False)
         model_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
         model_options_parser.add_argument("-num_epochs", "--num-epochs", type=int, help = "Number of epochs used in the fine-tuning of the model", default = 5)
-        model_options_parser.add_argument("-per_device_train_batch_size", "--per-device-train-batch-size", type=int, help = "Per device train batch size", default = 16)
+        model_options_parser.add_argument("-per_device_train_batch_size", "--per-device-train-batch-size", type=int, help = "Per device train batch size", default = 4)
         model_options_parser.add_argument("-per_device_eval_batch_size", "--per-device-eval-batch-size", type=int, help = "Per device eval batch size", default = 16)
         model_options_parser.add_argument("-learning_rate", "--learning-rate", type=float, help = "Learning rate used in fine-tunning", default = 2e-5)
         model_options_parser.add_argument("-weight_decay", "--weight-decay", type=float, help = "Weight decay parameter used in fine-tunning", default = 0.01)
         model_options_parser.add_argument("-warmup_ratio", "--warmup-ratio", type=float, help = "Warmup ratio parameter used in fine-tunning", default = 0.1)
         model_options_parser.add_argument("-val_size", "--val-size", type=float, help = "Size of the validation set as ratio of the train set", default = 0.1)
+        model_options_parser.add_argument("-num_classes", "--num-classes", type=int, help = "Number of classes for the classification task", default = 2)
      
         model_args, _ = model_options_parser.parse_known_args(input_args)
         self.model_name = model_args.model_name
@@ -44,6 +45,7 @@ class PretrainedModels:
         self.weight_decay = model_args.weight_decay
         self.warmup_ratio = model_args.warmup_ratio
         self.val_size = model_args.val_size
+        self.num_classes = model_args.num_classes
         # self.model_name = model_options['model_name']
         # self.max_sequence_length = model_options['max_sequence_length']
         # self.output_dir = model_options['output_dir']
@@ -70,9 +72,9 @@ class PretrainedModels:
         if self.task == 'classification':
             try:
                 if self.load_model_dir is not None:
-                    self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir)
+                    self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.load_model_dir, num_labels=self.num_classes)
                 else:
-                    self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name)
+                    self.model = transformers.AutoModelForSequenceClassification.from_pretrained(self.model_name, num_labels=self.num_classes)
                 self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.model_name)
                 # self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
             except Exception as e:
@@ -196,7 +198,9 @@ class PretrainedModels:
         # load model and tokenizer and define length of the text sequence, number of classes
         self.num_classes = len(set(train_data.to_pandas()["label"]))
         self.model.config.num_labels = self.num_classes
+        # print(self.model.config.num_labels)
         print(f"..num_classes = {self.num_classes}")
+        # print(set(train_data.to_pandas()["label"]))
 
         # splitting train set into validation set and exclusively train set
         train_valid = train_data.train_test_split(test_size=self.val_size)

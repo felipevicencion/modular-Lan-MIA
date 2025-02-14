@@ -95,8 +95,8 @@ Once {num-trials} attacks are performed we summarize theit effectivness through 
 | Dataset | Description |
 | --- | --- |
 | `imdb` | IMDb dataset contains 50,000 movie reviews labeled as either positive or negative. The dataset is balanced, with an equal number of positive and negative reviews. It is divided into 25,000 reviews for training and 25,000 for testing. |
-| `yelp_review_full` | The Yelp Review Full Dataset is a text classification dataset that consists of 700,000 reviews from the Yelp website. Reviews are labeled with one of five possible star ratings (1 to 5), representing sentiments from Very negative (1) to Very positive (5). It is divided into 650,000 reviews for training and 50,000 for testing. 
-| `amazon_reviews_multi` | The Amazon Multilingual Reviews dataset (English subset) is a text classification dataset containing customer reviews from Amazon across multiple product categories. Each review includes a 1-to-5 star rating, a title, and a review body. The dataset is divided into 200,000 reviews for training, 5,000 for validation, and 5,000 for testing. It is useful for sentiment analysis and multilingual NLP research. |
+| `yelp_polarity` | The Yelp Polarity Dataset is a text classification dataset consisting of 560,000 reviews from the Yelp website. Reviews are labeled with one of two possible sentiments: Positive (4 or 5 stars) and Negative (1 or 2 stars). Neutral reviews (3 stars) are not included. The dataset is split into 560,000 reviews for training and 38,000 for testing. | 
+| `mteb/amazon_reviews_multi` | The Amazon Multilingual Reviews dataset (English subset) is a text classification dataset containing customer reviews from Amazon across multiple product categories. Each review includes a 1-to-5 star rating, a title, and a review body. The dataset is divided into 200,000 reviews for training, 5,000 for validation, and 5,000 for testing. It is useful for sentiment analysis and multilingual NLP research. |
 
 # Covered NLP models
 | Model name | Description |
