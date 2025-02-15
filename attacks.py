@@ -10,6 +10,7 @@ import scipy
 import zlib
 import matplotlib.pyplot as plt
 import argparse
+import time
     
 class Attack:
 
@@ -17,19 +18,23 @@ class Attack:
             attack_options_parser = argparse.ArgumentParser(description="attack options parser")
             attack_options_parser.add_argument("-attack_name", "--attack-name", type=str, help = "Name of an attack to be performed", default = "prediction_loss_based_mia")
             attack_options_parser.add_argument("-num_trials", "--num-trials", type=int, help = "Number of trials of an attack to be performed", default = 500)
-            attack_options_parser.add_argument("-score_thr", "--score-thr", type=float, help = "Threshold to be used for attacks based on scores", default = 1.002)
+            attack_options_parser.add_argument("-score_thr", "--score-thr", type=str, help = "Thresholds to be used for attacks based on scores", default = 1.002)
             attack_options_parser.add_argument("-max_sequence_length", "--max-sequence-length", type=int, help = "Maximum sequence length", default = 512)
-            attack_options_parser.add_argument("-output_dir", "--output-dir", type=str, help = "Location of the output directory", default = None)  
+            attack_options_parser.add_argument("-output_dir", "--output-dir", type=str, help = "Location of the output directory", default = None)
+            attack_options_parser.add_argument("-output_name", "--output-name", type=str, help = "Name of the output file", default = None)  
             attack_options_parser.add_argument("-confidence_thr", "--confidence-thr", type=float, help = "Confidence threshold for MIA attacks", default = 0.9)
             attack_options_parser.add_argument("--num_shadow_models", "--num-shadow-models", type=int, help = "Number of shadow models to be created", default = 10)
 
             attack_args, _ = attack_options_parser.parse_known_args(input_args)
             self.attack_name = attack_args.attack_name
             self.num_trials = attack_args.num_trials
-            self.score_thr = parse_thresholds(str(args.score_thr))
+            self.score_thr = parse_thresholds(str(attack_args.score_thr))
             # self.score_thr = attack_args.score_thr
             self.max_sequence_length = attack_args.max_sequence_length
             self.output_dir = attack_args.output_dir
+            self.output_name = attack_args.output_name
+            if self.output_name is None:
+                self.output_name = self.attack_name
             self.confidence_thr = attack_args.confidence_thr
             self.num_shadow_models = attack_args.num_shadow_models
             
@@ -122,7 +127,11 @@ class Attack:
         shf_test_data = test_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
         membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
+        start_time_perform_attack = time.time()
         self.run_attack(attack_dataset, membership_true, attack_options)
+        end_time_perform_attack = time.time()
+        elapsed_time = end_time_perform_attack - start_time_perform_attack
+        print(f"Attack completed in {elapsed_time:.4f} seconds.")
         self.mia_metrics = self.calculate_mia_metrics(membership_true, self.membership_pred)
         self.print_mia_metrics()
         return self.mia_metrics
@@ -145,7 +154,7 @@ class ThresholdAttack(MetricAttack):
     def __init__(self, input_args):
         super().__init__(input_args)
 
-    def thresholds_comp(scores, thrs):
+    def thresholds_comp(self, scores, thrs):
         """
         Creates a membership matrix where each entry is 1 if the score is below the threshold, else 0.
         
@@ -163,7 +172,7 @@ class ThresholdAttack(MetricAttack):
         
         return membership_matrix
 
-    def plot_roc_curves(membership_matrix, membership_true, out_loc):
+    def plot_roc_curves(self, membership_matrix, membership_true, out_loc):
         mean_membership = membership_matrix.mean(axis=1)  # Average score per sample
         fpr, tpr, _ = roc_curve(membership_true, mean_membership)
         roc_auc = auc(fpr, tpr)

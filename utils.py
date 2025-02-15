@@ -246,6 +246,12 @@ def parse_thresholds(thr_str):
                 thr_list.append(float(part))
         return thr_list
     else:
-        return float(thr_str)
+        if ":" in thr_str:
+            thr_list = []
+            a, b, c = map(float, thr_str.split(":"))
+            thr_list.extend(np.arange(a, b, c))
+            return thr_list
+        else:
+            return float(thr_str)
 
 

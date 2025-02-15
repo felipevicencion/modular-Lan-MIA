@@ -3,7 +3,7 @@ import torch
 sys.path.insert(0, '..')
 from attacks import *
 
-class AttackPredictionLossBasedMia(MetricAttack):
+class AttackPredictionLossBasedMia(ThresholdAttack):
 
     def __init__(self, input_args):
         super().__init__(input_args)
@@ -35,6 +35,8 @@ class AttackPredictionLossBasedMia(MetricAttack):
     
         # calculate per-sample loss
         per_sample_loss = criterion(logits_tensor, labels_tensor)
-        self.membership_pred = (per_sample_loss < training_loss).int()
+        self.membership_pred = self.thresholds_comp(per_sample_loss, self.score_thr) # matrix of shape (len(scores), len(thrs)) 
+        self.plot_roc_curves(self.membership_pred, membership_true, f"{self.output_dir}/{self.output_name}")
+        # self.membership_pred = (per_sample_loss < training_loss).int()
         
         
