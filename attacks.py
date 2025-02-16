@@ -43,62 +43,136 @@ class Attack:
             self.num_trials_per_cat = int( 0.5 * self.num_trials )
             self.mia_metrics = {}
 
+    # def calculate_mia_metrics(self, true_labels, predicted_labels):
+    #     """
+    #     Parameters:
+    #         true_labels (torch.Tensor): Ground truth labels as a tensor of type long. 
+    #                                     Expected to contain binary values (0 or 1).
+    #         predicted_labels (torch.Tensor): Predicted labels as a tensor of type long. 
+    #                                          Expected to contain binary values (0 or 1).
+        
+    #     Returns:
+    #         dict: A dictionary containing the following metrics:
+    #             - TP: True Positives
+    #             - FP: False Positives
+    #             - TN: True Negatives
+    #             - FN: False Negatives
+    #             - Accuracy: Accuracy of the model
+    #             - Precision: Positive predictive value
+    #             - Recall (TPR)
+    #             - F1 Score: Harmonic mean of precision and recall
+    #             - FPR: False Positive Rate
+    #             - TPR: True Positive Rate 
+    #             - Adv: Advantage (TPR - FPR)
+    #     """
+    #     # tensors are of type long (for classification)
+    #     true_labels = true_labels.long()
+    #     predicted_labels = predicted_labels.long()
+
+    #     tp = torch.sum((true_labels == 1) & (predicted_labels == 1)).item()
+    #     fp = torch.sum((true_labels == 0) & (predicted_labels == 1)).item()
+    #     tn = torch.sum((true_labels == 0) & (predicted_labels == 0)).item()
+    #     fn = torch.sum((true_labels == 1) & (predicted_labels == 0)).item()
+        
+    #     accuracy = accuracy_score(true_labels, predicted_labels)
+    #     precision = precision_score(true_labels, predicted_labels)
+    #     recall = recall_score(true_labels, predicted_labels)
+    #     f1 = f1_score(true_labels, predicted_labels)
+    #     fpr = fp / (fp + tn) if (fp + tn) > 0 else 0  
+    #     tpr = recall  
+    #     adv = tpr - fpr
+    #     metrics = {
+    #         "TP": tp,
+    #         "FP": fp,
+    #         "TN": tn,
+    #         "FN": fn,
+    #         "Accuracy": accuracy,
+    #         "Precision": precision,
+    #         "Recall (TPR)": recall,
+    #         "F1 Score": f1,
+    #         "FPR": fpr,
+    #         "TPR": tpr,
+    #         "Adv": adv
+    #     }
+    #     return metrics
+
     def calculate_mia_metrics(self, true_labels, predicted_labels):
         """
+        Compute MIA metrics for binary classification.
+        
+        Handles cases where predicted_labels is either:
+        - A 1D tensor of binary values.
+        - A 2D tensor of shape (len(scores), len(thrs)), where each column represents predictions at a different threshold.
+        
         Parameters:
-            true_labels (torch.Tensor): Ground truth labels as a tensor of type long. 
-                                        Expected to contain binary values (0 or 1).
-            predicted_labels (torch.Tensor): Predicted labels as a tensor of type long. 
-                                             Expected to contain binary values (0 or 1).
+            true_labels (torch.Tensor): Ground truth labels as a tensor of type long (binary values: 0 or 1).
+            predicted_labels (torch.Tensor or np.ndarray): Predicted labels, either a 1D tensor or a matrix where each column 
+                                                        stores predicted labels at a different threshold.
         
         Returns:
-            dict: A dictionary containing the following metrics:
-                - TP: True Positives
-                - FP: False Positives
-                - TN: True Negatives
-                - FN: False Negatives
-                - Accuracy: Accuracy of the model
-                - Precision: Positive predictive value
-                - Recall (TPR)
-                - F1 Score: Harmonic mean of precision and recall
-                - FPR: False Positive Rate
-                - TPR: True Positive Rate 
-                - Adv: Advantage (TPR - FPR)
+            dict: A dictionary where keys are threshold indices (or "single" if only one set of predictions is provided),
+                and values contain the computed metrics.
         """
-        # tensors are of type long (for classification)
         true_labels = true_labels.long()
-        predicted_labels = predicted_labels.long()
-
-        tp = torch.sum((true_labels == 1) & (predicted_labels == 1)).item()
-        fp = torch.sum((true_labels == 0) & (predicted_labels == 1)).item()
-        tn = torch.sum((true_labels == 0) & (predicted_labels == 0)).item()
-        fn = torch.sum((true_labels == 1) & (predicted_labels == 0)).item()
         
-        accuracy = accuracy_score(true_labels, predicted_labels)
-        precision = precision_score(true_labels, predicted_labels)
-        recall = recall_score(true_labels, predicted_labels)
-        f1 = f1_score(true_labels, predicted_labels)
-        fpr = fp / (fp + tn) if (fp + tn) > 0 else 0  
-        tpr = recall  
-        adv = tpr - fpr
-        metrics = {
-            "TP": tp,
-            "FP": fp,
-            "TN": tn,
-            "FN": fn,
-            "Accuracy": accuracy,
-            "Precision": precision,
-            "Recall (TPR)": recall,
-            "F1 Score": f1,
-            "FPR": fpr,
-            "TPR": tpr,
-            "Adv": adv
-        }
+        # If predicted_labels is 1D, convert it to 2D for uniform handling
+        if len(predicted_labels.shape) == 1:
+            predicted_labels = predicted_labels.unsqueeze(1)  # Shape (N, 1)
+
+        num_thresholds = predicted_labels.shape[1]
+        metrics = {}
+
+        for i in range(num_thresholds):
+            preds = predicted_labels[:, i]  # Get predictions for threshold i
+            # print(preds)
+
+            # Convert NumPy array to a Torch tensor and cast to long
+            # preds = torch.from_numpy(preds).long()
+            preds = torch.tensor(preds, dtype=torch.long)
+
+            # preds = preds.long()
+
+            # Compute TP, FP, TN, FN
+            tp = torch.sum((true_labels == 1) & (preds == 1)).item()
+            fp = torch.sum((true_labels == 0) & (preds == 1)).item()
+            tn = torch.sum((true_labels == 0) & (preds == 0)).item()
+            fn = torch.sum((true_labels == 1) & (preds == 0)).item()
+
+            # Compute metrics
+            accuracy = accuracy_score(true_labels.cpu(), preds.cpu())
+            precision = precision_score(true_labels.cpu(), preds.cpu(), zero_division=0)
+            recall = recall_score(true_labels.cpu(), preds.cpu(), zero_division=0)
+            f1 = f1_score(true_labels.cpu(), preds.cpu(), zero_division=0)
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0  
+            tpr = recall  
+            adv = tpr - fpr
+
+            # Store metrics for this threshold
+            metrics[f"thr_{self.score_thr[i]}"] = {
+                "TP": tp,
+                "FP": fp,
+                "TN": tn,
+                "FN": fn,
+                "Accuracy": accuracy,
+                "Precision": precision,
+                "Recall (TPR)": recall,
+                "F1 Score": f1,
+                "FPR": fpr,
+                "TPR": tpr,
+                "Adv": adv
+            }
+
         return metrics
 
     def print_mia_metrics(self):
-        for metric, value in self.mia_metrics.items():
-            print(f"{metric}: {value:.4f}")
+        for threshold, metrics_dict in self.mia_metrics.items():
+            print(f"{threshold}:")
+            for metric, value in metrics_dict.items():
+                if isinstance(value, float):
+                    print(f"  {metric}: {value:.4f}")
+                else:
+                    print(f"  {metric}: {value}")
+
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
         raise NotImplementedError("Attack must implement the run_attack method.")
@@ -190,16 +264,18 @@ class ThresholdAttack(MetricAttack):
     
         print(f"full ROC curve saved to {out_loc}_full_roc_curve.png")
         
-        # ROC Curve up to 1% FDR (False Discovery Rate ~ False Positive Rate)
-        fdr_threshold = 0.01
-        mask = fpr <= fdr_threshold
+        # ROC Curve up to 5% FDR (False Discovery Rate ~ False Positive Rate)
+        fpr_threshold = 0.05
+        mask = (fpr <= fpr_threshold)
         plt.figure(figsize=(8, 6))
-        plt.plot(fpr[mask], tpr[mask], color='red', lw=2, label=f'ROC (up to 1% FDR)')
+        plt.plot(fpr[mask], tpr[mask], color='red', lw=2, label=f'ROC (up to 5% FDR)')
+        plt.xlim([0,fpr_threshold])
+        plt.ylim([0,1])
         plt.xlabel('False Positive Rate (FDR)')
         plt.ylabel('True Positive Rate')
         plt.title('ROC Curve (1% FDR)')
         plt.legend(loc='lower right')
-        plt.savefig(f"{out_loc}_roc_curve_1percent_fdr.png")
+        plt.savefig(f"{out_loc}_roc_curve_5percent_fpr.png")
         plt.close()
         
-        print(f"1percent ROC curve saved to {out_loc}_roc_curve_1percent_fdr.png")
+        print(f"1percent ROC curve saved to {out_loc}_roc_curve_5percent_fpr.png")
