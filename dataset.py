@@ -23,29 +23,27 @@ class Dataset:
         def get_train_test(self):
             return self.train_data, self.test_data
 
-        def add_sample(self, sample):
+        def add_sample(self, target_dataset, sample):
             """
             Add a sample to the specified dataset if it doesn't already belong to it.
     
             Parameters:
-                sample (any): The sample to add.
-                dataset (str): The dataset to add the sample to train.
+                sample: The sample to add.
+                target_dataset: The dataset to add the sample to train.
             """
-            target_dataset = self.train_data
-            if sample not in target_dataset:
-                target_dataset.append(sample)
-    
-        def remove_sample(self, sample):
-            """
-            Remove a sample from the specified dataset if it belongs to it.
-    
-            Parameters:
-                sample (any): The sample to remove.
-                dataset (str): The dataset to remove the sample from train.
-            """
-            target_dataset = self.train_data
-            if sample in target_dataset:
-                target_dataset.remove(sample)
+            print(type(sample))
+            print(sample.keys())
+            print(target_dataset)
+            print(sample)
+            sample = datasets.Dataset.from_dict(sample)
+            combined_dataset = datasets.concatenate_datasets([target_dataset, sample])
+            # Remove duplicates by converting to a set of tuples and back to a Dataset
+            unique_samples = {tuple(item.values()) for item in combined_dataset}
+            unique_dataset = Dataset.from_dict({
+                key: [d[i] for d in unique_samples] 
+                for i, key in enumerate(combined_dataset.features)
+            })
+            return unique_dataset
 
         def train_test_split(self, use_data_percentage):
             """
@@ -65,17 +63,7 @@ class Dataset:
                 - self.indices_train: Collection of randomly selected indices for the training subset.
                 - self.indices_test: Collection of randomly selected indices for the testing subset.
             """
-            # if self.dataset_name == 'IMDb':
 
-            #     self.dataset_name_internal = 'imdb'
-
-            # elif self.dataset_name == 'Yelp':
-
-            #     self.dataset_name_internal = 'yelp_review_full'
-                
-            # else:
-                
-            #     raise ValueError(f"{self.dataset_name} dataset is not available!")
             print(f"..loading dataset {self.dataset_path}")
             if self.dataset_name is not None:
                 train_data, test_data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split =['train', 'test'])
@@ -114,7 +102,7 @@ class Dataset:
 
         def sample_n_in_k(self, k, num_samples):
             """
-            Samples `N` data points for each of the `k` subsets. The subsets are not necessarily disjoint.
+            Samples `n` data points for each of the `k` subsets. The subsets are not necessarily disjoint.
     
             Parameters:
                 k (int): The number of subsets to generate.
@@ -126,8 +114,7 @@ class Dataset:
             self.shadow_datasets = []
             for _ in range(k):
                 sampled_indices = np.random.choice(np.arange(len(self.train_data)), size=num_samples, replace=False)
-                train_data_subset = self.train_data[sampled_indices]
-                self.shadow_datasets.append(train_data_subset)
+                self.shadow_datasets.append(self.train_data.select(sampled_indices))
 
         def distribute_to_shadow_datasets(self, attack_dataset):
             """
@@ -152,7 +139,7 @@ class Dataset:
                 out_indices.append(out_indices_sample)
                 for idx in half_datasets:
                     dataset_train = self.shadow_datasets[idx]
-                    dataset_train.add_sample(sample)
+                    dataset_train = self.add_sample(dataset_train, sample)
                     self.shadow_datasets[idx] = dataset_train
             return in_indices, out_indices
 

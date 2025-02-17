@@ -131,7 +131,8 @@ class PretrainedModels:
         train_data = train_valid["train"]
         train_data = tokenize_data(self.tokenizer, train_data, self.max_sequence_length)
         val_data = tokenize_data(self.tokenizer, val_data, self.max_sequence_length)
-
+        wdataset.train_data = train_data
+        wdataset.test_data = test_data
         trainer = transformers.Trainer(
             model=self.model,
             compute_metrics=self.compute_metrics,

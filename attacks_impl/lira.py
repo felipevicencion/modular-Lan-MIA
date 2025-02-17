@@ -6,7 +6,7 @@ sys.path.insert(0, '..')
 from attacks import *
 from model_train import *
 
-class LiRA(ShadowAttack):
+class AttackLira(ShadowAttack):
 
     def __init__(self, input_args):
         super().__init__(input_args)
@@ -59,23 +59,19 @@ class LiRA(ShadowAttack):
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
         self.model = attack_options['model']
-        self.max_length = attack_options['max_length']
+        # self.max_length = attack_options['max_length']
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
-        self.num_shadow_models = attack_options['num_shadow_models']
         wdataset = attack_options['wdataset']
-        num_epochs = 10
 
-        # if the attack is of ShadowAttack type then we pass model training dataset under 'attack_options'
         train_sample_size = len(wdataset.train_data)
-
-        wdataset.sample_n_in_k(self.num_shadow_models, int(float(self.use_train_percentage) / 100 * len(train_sample_size)))
+        wdataset.sample_n_in_k(self.num_shadow_models, int(float(self.use_train_percentage) / 100 * train_sample_size))
         in_indices, out_indices = wdataset.distribute_to_shadow_datasets(attack_dataset)
-        wmodel = PretrainedModels(attack_options['model_options'])
+        wmodel = PretrainedModels(self.input_args)
         trainers = {}
         for idx_shadow in range(wmodel.num_shadow_models):
-            trainers[idx_shadow], _, _ = wmodel.fine_tune(wdataset, num_epochs, idx_shadow)
+            trainers[idx_shadow], _, _ = wmodel.fine_tune(wdataset, self.num_epochs, idx_shadow)
             # trainers[idx_shadow] = trainer
         
         # performing an attack on attack dataset
