@@ -7,22 +7,18 @@ class AttackPredictionLossBasedMia(ThresholdAttack):
 
     def __init__(self, input_args):
         super().__init__(input_args)
+        attack_options_parser = argparse.ArgumentParser(description="prediction loss based mia options parser")
+        attack_options_parser.add_argument("-use_average_training_loss", "--use-average-training-loss", type=bool, help="Whether the algorithm is provided with score threshold or if average training loss should be used", default=False)
+        attack_args, _ = attack_options_parser.parse_known_args(input_args)
+        self.use_average_training_loss = attack_args.use_average_training_loss
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
-        # find average loss over iterations and over samples
-        # log_history = trainer.state.log_history
-        # training_loss = [entry['loss'] for entry in log_history if 'loss' in entry]
-        # training_loss_mean = np.mean(training_loss)
     
-        # find average loss over samples in last iteration
-        # last_record = trainer.state.log_history[-1]
-        # print(last_record)
-        # training_loss = last_record['train_loss']
-    
-        # evaluating the average training loss at last iteration
+        # evaluating the average training loss at the best iteration 
         trainer = attack_options['trainer']
-        train_loss_result = trainer.evaluate(eval_dataset=trainer.train_dataset)
-        training_loss = train_loss_result.get("eval_loss", None)
+        if self.use_average_training_loss:
+            train_loss_result = trainer.evaluate(eval_dataset=trainer.train_dataset)
+            self.score_thr = train_loss_result.get("eval_loss", None)
     
         predictions = trainer.predict(attack_dataset)
     
@@ -37,6 +33,5 @@ class AttackPredictionLossBasedMia(ThresholdAttack):
         per_sample_loss = criterion(logits_tensor, labels_tensor)
         self.membership_pred = self.thresholds_comp(per_sample_loss, self.score_thr) # matrix of shape (len(scores), len(thrs)) 
         self.plot_roc_curves(self.membership_pred, membership_true, f"{self.output_dir}/{self.output_name}")
-        # self.membership_pred = (per_sample_loss < training_loss).int()
         
         

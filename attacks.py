@@ -11,6 +11,7 @@ import zlib
 import matplotlib.pyplot as plt
 import argparse
 import time
+import json
     
 class Attack:
 
@@ -207,6 +208,10 @@ class Attack:
         elapsed_time = end_time_perform_attack - start_time_perform_attack
         print(f"Attack completed in {elapsed_time:.4f} seconds.")
         self.mia_metrics = self.calculate_mia_metrics(membership_true, self.membership_pred)
+        mia_metrics_output_path = f"{self.output_dir}/{self.output_name}_mia_metrics.json"
+        with open(mia_metrics_output_path, "w") as json_file:
+            json.dump(self.mia_metrics, json_file, indent=4)
+        print(f"MIA metrics saved to {mia_metrics_output_path}")
         self.print_mia_metrics()
         return self.mia_metrics
 

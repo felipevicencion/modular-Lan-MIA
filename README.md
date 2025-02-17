@@ -65,6 +65,12 @@ python3 main.py --dataset IMDb --num-epochs 10 --attack-name prediction_loss_bas
 | `--num-trials` | number of trials of an attack to be performed | 500 |
 | `--load-model-dir` | directory from which a trained model is loaded | None |
 
+## Prediction loss based MIA
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `--use-average-training-loss` | Whether the algorithm is provided with score threshold or if average training loss should be used | False |
+
 ## ReCall Input options
 
 | Option | Description | Default |
