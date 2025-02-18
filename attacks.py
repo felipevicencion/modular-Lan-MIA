@@ -264,70 +264,70 @@ class ThresholdAttack(MetricAttack):
         
         print(f"1percent ROC curve saved to {out_loc}_roc_curve_5percent_fpr.png")
 
-        def calculate_mia_metrics(self, true_labels, predicted_labels):
-            """
-            Compute MIA metrics for binary classification.
-            
-            Handles cases where predicted_labels is either:
-            - A 1D tensor of binary values.
-            - A 2D tensor of shape (len(scores), len(thrs)), where each column represents predictions at a different threshold.
-            
-            Parameters:
-                true_labels (torch.Tensor): Ground truth labels as a tensor of type long (binary values: 0 or 1).
-                predicted_labels (torch.Tensor or np.ndarray): Predicted labels, either a 1D tensor or a matrix where each column 
-                                                            stores predicted labels at a different threshold.
-            
-            Returns:
-                dict: A dictionary where keys are threshold indices (or "single" if only one set of predictions is provided),
-                    and values contain the computed metrics.
-            """
-            true_labels = true_labels.long()
-            
-            # If predicted_labels is 1D, convert it to 2D for uniform handling
-            if len(predicted_labels.shape) == 1:
-                predicted_labels = predicted_labels.unsqueeze(1)  # Shape (N, 1)
+    def calculate_mia_metrics(self, true_labels, predicted_labels):
+        """
+        Compute MIA metrics for binary classification.
+        
+        Handles cases where predicted_labels is either:
+        - A 1D tensor of binary values.
+        - A 2D tensor of shape (len(scores), len(thrs)), where each column represents predictions at a different threshold.
+        
+        Parameters:
+            true_labels (torch.Tensor): Ground truth labels as a tensor of type long (binary values: 0 or 1).
+            predicted_labels (torch.Tensor or np.ndarray): Predicted labels, either a 1D tensor or a matrix where each column 
+                                                        stores predicted labels at a different threshold.
+        
+        Returns:
+            dict: A dictionary where keys are threshold indices (or "single" if only one set of predictions is provided),
+                and values contain the computed metrics.
+        """
+        true_labels = true_labels.long()
+        
+        # If predicted_labels is 1D, convert it to 2D for uniform handling
+        if len(predicted_labels.shape) == 1:
+            predicted_labels = predicted_labels.unsqueeze(1)  # Shape (N, 1)
 
-            num_thresholds = predicted_labels.shape[1]
-            metrics = {}
+        num_thresholds = predicted_labels.shape[1]
+        metrics = {}
 
-            for i in range(num_thresholds):
-                preds = predicted_labels[:, i]  # Get predictions for threshold i
-                # print(preds)
+        for i in range(num_thresholds):
+            preds = predicted_labels[:, i]  # Get predictions for threshold i
+            # print(preds)
 
-                # Convert NumPy array to a Torch tensor and cast to long
-                # preds = torch.from_numpy(preds).long()
-                preds = torch.tensor(preds, dtype=torch.long)
+            # Convert NumPy array to a Torch tensor and cast to long
+            # preds = torch.from_numpy(preds).long()
+            preds = torch.tensor(preds, dtype=torch.long)
 
-                # preds = preds.long()
+            # preds = preds.long()
 
-                # Compute TP, FP, TN, FN
-                tp = torch.sum((true_labels == 1) & (preds == 1)).item()
-                fp = torch.sum((true_labels == 0) & (preds == 1)).item()
-                tn = torch.sum((true_labels == 0) & (preds == 0)).item()
-                fn = torch.sum((true_labels == 1) & (preds == 0)).item()
+            # Compute TP, FP, TN, FN
+            tp = torch.sum((true_labels == 1) & (preds == 1)).item()
+            fp = torch.sum((true_labels == 0) & (preds == 1)).item()
+            tn = torch.sum((true_labels == 0) & (preds == 0)).item()
+            fn = torch.sum((true_labels == 1) & (preds == 0)).item()
 
-                # Compute metrics
-                accuracy = accuracy_score(true_labels.cpu(), preds.cpu())
-                precision = precision_score(true_labels.cpu(), preds.cpu(), zero_division=0)
-                recall = recall_score(true_labels.cpu(), preds.cpu(), zero_division=0)
-                f1 = f1_score(true_labels.cpu(), preds.cpu(), zero_division=0)
-                fpr = fp / (fp + tn) if (fp + tn) > 0 else 0  
-                tpr = recall  
-                adv = tpr - fpr
+            # Compute metrics
+            accuracy = accuracy_score(true_labels.cpu(), preds.cpu())
+            precision = precision_score(true_labels.cpu(), preds.cpu(), zero_division=0)
+            recall = recall_score(true_labels.cpu(), preds.cpu(), zero_division=0)
+            f1 = f1_score(true_labels.cpu(), preds.cpu(), zero_division=0)
+            fpr = fp / (fp + tn) if (fp + tn) > 0 else 0  
+            tpr = recall  
+            adv = tpr - fpr
 
-                # Store metrics for this threshold
-                metrics[f"thr_{self.score_thr[i]}"] = {
-                    "TP": tp,
-                    "FP": fp,
-                    "TN": tn,
-                    "FN": fn,
-                    "Accuracy": accuracy,
-                    "Precision": precision,
-                    "Recall (TPR)": recall,
-                    "F1 Score": f1,
-                    "FPR": fpr,
-                    "TPR": tpr,
-                    "Adv": adv
-                }
+            # Store metrics for this threshold
+            metrics[f"thr_{self.score_thr[i]}"] = {
+                "TP": tp,
+                "FP": fp,
+                "TN": tn,
+                "FN": fn,
+                "Accuracy": accuracy,
+                "Precision": precision,
+                "Recall (TPR)": recall,
+                "F1 Score": f1,
+                "FPR": fpr,
+                "TPR": tpr,
+                "Adv": adv
+            }
 
-            return metrics
+        return metrics
