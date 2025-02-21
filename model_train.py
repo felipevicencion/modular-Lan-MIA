@@ -233,7 +233,7 @@ class PretrainedModels:
             disable_tqdm=True # not diplaying a progress bar
         )
 
-        trainer = transformers.Trainer(
+        self.trainer = transformers.Trainer(
             model=self.model,
             args=training_args,
             compute_metrics=self.compute_metrics,
@@ -243,16 +243,16 @@ class PretrainedModels:
 
         print(f"device = {training_args.device}")
 
-        train_res = trainer.train()
+        train_res = self.trainer.train()
         print("..train ended")
 
         best_model_file_path = os.path.join(self.output_dir, "best_performing_model")
         os.makedirs(self.output_dir, exist_ok=True)
-        trainer.save_model(best_model_file_path)
+        self.trainer.save_model(best_model_file_path)
     
         print("..metric evaluation on the test set")
-        trainer.eval_dataset = test_data
-        eval_test_results = trainer.evaluate()
+        self.trainer.eval_dataset = test_data
+        eval_test_results = self.trainer.evaluate()
 
         # Create fine-tuning details object based on instance attributes
         fine_tuning_details = {
