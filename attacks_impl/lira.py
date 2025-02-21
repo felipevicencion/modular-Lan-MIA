@@ -70,9 +70,8 @@ class AttackLira(ShadowAttack):
         in_indices, out_indices = wdataset.distribute_to_shadow_datasets(attack_dataset)
         wmodel = PretrainedModels(self.input_args)
         trainers = {}
-        for idx_shadow in range(wmodel.num_shadow_models):
-            trainers[idx_shadow], _, _ = wmodel.fine_tune(wdataset, self.num_epochs, idx_shadow)
-            # trainers[idx_shadow] = trainer
+        for idx_shadow in range(self.num_shadow_models):
+            trainers[idx_shadow], _, _ = wmodel.fine_tune(wdataset, idx_shadow)
         
         # performing an attack on attack dataset
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)

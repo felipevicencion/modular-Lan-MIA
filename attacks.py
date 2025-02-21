@@ -173,7 +173,7 @@ class ShadowAttack(Attack):
         super().__init__(input_args)
 
         attack_options_parser = argparse.ArgumentParser(description="shadow attack options parser")
-        attack_options_parser.add_argument("--num_shadow_models", "--num-shadow-models", type=int, help = "Number of shadow models to be created", default = 5)
+        attack_options_parser.add_argument("--num_shadow_models", "--num-shadow-models", type=int, help = "Number of shadow models to be created", default = 2)
         # attack_options_parser.add_argument("-model_name", "--model-name", type=str, help = "Name of the pretrained NLP model", default = "roberta-base")
         # attack_options_parser.add_argument("-max_sequence_length", "--max-sequence-length", type=int, help = "Maximum sequence length", default = 512)
         # attack_options_parser.add_argument("-use_float16", "--use-float16", type=bool, help = "Whether or not to store weight in 16 bit floats", default = False)

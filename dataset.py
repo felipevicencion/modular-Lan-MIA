@@ -1,6 +1,3 @@
-# import torchtext
-# torchtext.disable_torchtext_deprecation_warning()
-# from torchtext.datasets import IMDB
 import datasets
 import torch
 import argparse
@@ -12,9 +9,11 @@ class Dataset:
             dataset_options_parser = argparse.ArgumentParser(description="dataset options parser")
             dataset_options_parser.add_argument("-datatset_path", "--dataset-path", type=str, help="Path to the HF dataset, either a local directory or a dataset repository on the HF hub (list all available datasets with huggingface_hub.list_datasets)", default='imdb')
             dataset_options_parser.add_argument("-dataset_name", "--dataset-name", type=str, help="Defining the name of the dataset configuration", default=None)
+            dataset_options_parser.add_argument("-use_data_percentage", "--use-data-percentage", type=int, help="Defining the percentage of the data to be used", default=100)
             dataset_args, _ = dataset_options_parser.parse_known_args(input_args)
             self.dataset_path = dataset_args.dataset_path
             self.dataset_name = dataset_args.dataset_name
+            self.use_data_percentage = dataset_args.use_data_percentage
             self.train_data = None # same as member data
             self.indices_train = None
             self.test_data = None # same as non-member data
@@ -25,35 +24,25 @@ class Dataset:
 
         def add_sample(self, target_dataset, sample):
             """
-            Add a sample to the specified dataset if it doesn't already belong to it.
+            Add a sample to the specified dataset.
     
             Parameters:
                 sample: The sample to add.
                 target_dataset: The dataset to add the sample to train.
             """
-            print(type(sample))
-            print(sample.keys())
-            print(target_dataset)
-            print(sample)
-            sample = datasets.Dataset.from_dict(sample)
+            # print(f"type(target_dataset) = {type(target_dataset)}")
+            # print(f"type(sample) = {type(sample)}")
+            # print(target_dataset)
+            # print(sample)
             combined_dataset = datasets.concatenate_datasets([target_dataset, sample])
-            # Remove duplicates by converting to a set of tuples and back to a Dataset
-            unique_samples = {tuple(item.values()) for item in combined_dataset}
-            unique_dataset = Dataset.from_dict({
-                key: [d[i] for d in unique_samples] 
-                for i, key in enumerate(combined_dataset.features)
-            })
-            return unique_dataset
-
-        def train_test_split(self, use_data_percentage):
+            # print(f"type(combined_dataset) = {type(combined_dataset)}\n")
+            return combined_dataset
+            
+        def train_test_split(self):
             """
             Load a specified dataset, split it into training and testing sets, and subset 
             the data based on a given percentage.
         
-            Parameters:
-                use_data_percentage (int): The percentage of the dataset to be include in 
-                                             both the training and testing splits. 
-                                             This value should be between 0 and 100.
             Raises:
                 ValueError: If the provided dataset name is not supported.
         
@@ -70,10 +59,10 @@ class Dataset:
             else:
                 train_data, test_data = datasets.load_dataset(self.dataset_path, split =['train', 'test'])
             # subsetting train and test data to 'use_data_percentage'
-            num_included_samples_train = int(len(train_data) * float(use_data_percentage) / 100)
+            num_included_samples_train = int(len(train_data) * float(self.use_data_percentage) / 100)
             self.indices_train = torch.randperm(len(train_data))[:num_included_samples_train].tolist()
             self.train_data = train_data.select(self.indices_train)
-            num_included_samples_test = int(len(test_data) * float(use_data_percentage) / 100)
+            num_included_samples_test = int(len(test_data) * float(self.use_data_percentage) / 100)
             self.indices_test = torch.randperm(len(test_data))[:num_included_samples_test].tolist()
             self.test_data = test_data.select(self.indices_test)
 
@@ -116,6 +105,32 @@ class Dataset:
                 sampled_indices = np.random.choice(np.arange(len(self.train_data)), size=num_samples, replace=False)
                 self.shadow_datasets.append(self.train_data.select(sampled_indices))
 
+        from datasets import Dataset
+
+        def deduplicate_dataset(self, dataset: Dataset) -> Dataset:
+            """
+            Removes duplicate rows from a Hugging Face datasets.Dataset object.
+
+            Args:
+                dataset (Dataset): The input dataset to deduplicate.
+
+            Returns:
+                Dataset: A new dataset with duplicates removed.
+            """
+            seen = set()
+
+            def is_unique(example):
+                example_tuple = tuple(tuple(example[key]) if isinstance(example[key], list) else example[key] for key in dataset.column_names)
+                
+                if example_tuple in seen:
+                    return False  # Duplicate, remove
+                seen.add(example_tuple)
+                return True  # Unique, keep
+
+            unique_dataset = dataset.filter(is_unique)
+            return unique_dataset
+
+
         def distribute_to_shadow_datasets(self, attack_dataset):
             """
             Distribute each sample in the attack dataset to exactly half of the shadow datasets (stored in self.shadow_datasets as a list).
@@ -132,15 +147,23 @@ class Dataset:
                 raise ValueError("No shadow datasets available.")
             in_indices = []  
             out_indices = []  
-            for sample in attack_dataset:
+            print(f"attack_dataset type = {type(attack_dataset)}")
+            for idx_sample in range(len(attack_dataset)):
+                sample = attack_dataset.select([idx_sample])
                 half_datasets = np.random.choice(num_shadow_datasets, size=num_shadow_datasets // 2, replace=False)
                 out_indices_sample = [idx for idx in range(num_shadow_datasets) if idx not in half_datasets]
                 in_indices.append(half_datasets.tolist())
                 out_indices.append(out_indices_sample)
-                for idx in half_datasets:
-                    dataset_train = self.shadow_datasets[idx]
-                    dataset_train = self.add_sample(dataset_train, sample)
-                    self.shadow_datasets[idx] = dataset_train
+            dataset_indices = [[] for _ in range(num_shadow_datasets)]  
+            for sample_id, dataset_list in enumerate(in_indices):  
+                for dataset_id in dataset_list:  
+                    dataset_indices[dataset_id].append(sample_id)  
+            dataset_indices = [sorted(indices) for indices in dataset_indices]
+            for idx in half_datasets:
+                samples = attack_dataset.select(dataset_indices[idx])
+                self.shadow_datasets[idx] = self.add_sample(self.shadow_datasets[idx], samples)
+            for idx in half_datasets:
+                self.shadow_datasets[idx] = self.deduplicate_dataset(self.shadow_datasets[idx])
             return in_indices, out_indices
 
 
