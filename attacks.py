@@ -152,13 +152,13 @@ class Attack:
         shf_train_data = train_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         shf_test_data = test_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
         attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
-        membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
+        self.membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
         start_time_perform_attack = time.time()
-        self.run_attack(attack_dataset, membership_true, attack_options)
+        self.run_attack(attack_dataset, self.membership_true, attack_options)
         end_time_perform_attack = time.time()
         elapsed_time = end_time_perform_attack - start_time_perform_attack
         print(f"Attack completed in {elapsed_time:.4f} seconds.")
-        self.mia_metrics = self.calculate_mia_metrics(membership_true, self.membership_pred)
+        self.mia_metrics = self.calculate_mia_metrics(self.membership_true, self.membership_pred)
         mia_metrics_output_path = f"{self.output_dir}/{self.output_name}_mia_metrics.json"
         with open(mia_metrics_output_path, "w") as json_file:
             json.dump(self.mia_metrics, json_file, indent=4)

@@ -9,7 +9,8 @@ class AttackPredictionCorrectnessBasedMia(MetricAttack):
         super().__init__(input_args)
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
-        trainer = attack_options['trainer']
+        with torch.no_grad():
+            trainer = attack_options['trainer']
         predictions_output = trainer.predict(attack_dataset)
         predictions = predictions_output.predictions
         label_ids = predictions_output.label_ids
