@@ -35,7 +35,6 @@ class Dataset:
             # print(target_dataset)
             # print(sample)
             combined_dataset = datasets.concatenate_datasets([target_dataset, sample])
-            # print(f"type(combined_dataset) = {type(combined_dataset)}\n")
             return combined_dataset
             
         def train_test_split(self):
@@ -89,25 +88,25 @@ class Dataset:
                 splits[i] = np.append(splits[i], idx)
             self.shadow_datasets = [(self.train_data[split], self.test_data[split]) for split in splits]
 
-        def sample_n_in_k(self, k, num_samples):
+        def sample_n_in_k(self, k, samples_percentage):
             """
             Samples `n` data points for each of the `k` subsets. The subsets are not necessarily disjoint.
     
             Parameters:
                 k (int): The number of subsets to generate.
-                num_samples (int): The number of samples in each subset.
+                samples_percentage (int): Percentage of samples in each subset.
     
             Attributes Modified:
                 - self.shadow_datasets: A list of `k` shadow datasets.
             """
+            combined_dataset = datasets.concatenate_datasets([self.train_data, self.test_data])
             self.shadow_datasets = []
             for _ in range(k):
-                sampled_indices = np.random.choice(np.arange(len(self.train_data)), size=num_samples, replace=False)
-                self.shadow_datasets.append(self.train_data.select(sampled_indices))
+                sampled_indices = np.random.choice(np.arange(len(combined_dataset)), size=int( float(len(combined_dataset) * samples_percentage) / 100 ), replace=False)
+                self.shadow_datasets.append(combined_dataset.select(sampled_indices)) 
 
-        from datasets import Dataset
 
-        def deduplicate_dataset(self, dataset: Dataset) -> Dataset:
+        def deduplicate_dataset(self, dataset):
             """
             Removes duplicate rows from a Hugging Face datasets.Dataset object.
 
@@ -143,13 +142,13 @@ class Dataset:
                 out_indices (list): Indices of the datasets that were not chosen for a sample.
             """
             num_shadow_datasets = len(self.shadow_datasets)
-            if num_shadow_datasets == 0:
-                raise ValueError("No shadow datasets available.")
+            print(num_shadow_datasets)
+            if num_shadow_datasets <= 1:
+                raise ValueError("Number of shadow datasets should be >= 2.")
             in_indices = []  
             out_indices = []  
             print(f"attack_dataset type = {type(attack_dataset)}")
-            for idx_sample in range(len(attack_dataset)):
-                sample = attack_dataset.select([idx_sample])
+            for _ in range(len(attack_dataset)):
                 half_datasets = np.random.choice(num_shadow_datasets, size=num_shadow_datasets // 2, replace=False)
                 out_indices_sample = [idx for idx in range(num_shadow_datasets) if idx not in half_datasets]
                 in_indices.append(half_datasets.tolist())

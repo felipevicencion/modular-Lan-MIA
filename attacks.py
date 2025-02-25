@@ -96,15 +96,6 @@ class Attack:
         }
         return metrics
 
-    # def print_mia_metrics(self):
-    #     for threshold, metrics_dict in self.mia_metrics.items():
-    #         print(f"{threshold}:")
-    #         for metric, value in metrics_dict.items():
-    #             if isinstance(value, float):
-    #                 print(f"  {metric}: {value:.4f}")
-    #             else:
-    #                 print(f"  {metric}: {value}")
-
     def print_mia_metrics(self):
         # Check if self.mia_metrics is a dictionary of dictionaries
         if all(isinstance(value, dict) for value in self.mia_metrics.values()):
@@ -292,14 +283,9 @@ class ThresholdAttack(MetricAttack):
 
         for i in range(num_thresholds):
             preds = predicted_labels[:, i]  # Get predictions for threshold i
-            # print(preds)
-
-            # Convert NumPy array to a Torch tensor and cast to long
-            # preds = torch.from_numpy(preds).long()
-            preds = torch.tensor(preds, dtype=torch.long)
-
-            # preds = preds.long()
-
+            # preds = torch.tensor(preds, dtype=torch.long)
+            preds = preds.clone().detach().to(torch.long)
+            
             # Compute TP, FP, TN, FN
             tp = torch.sum((true_labels == 1) & (preds == 1)).item()
             fp = torch.sum((true_labels == 0) & (preds == 1)).item()
@@ -315,8 +301,13 @@ class ThresholdAttack(MetricAttack):
             tpr = recall  
             adv = tpr - fpr
 
+            if isinstance(self.score_thr, (list, tuple)):
+                name = f"thr_{self.score_thr[i]}" if len(self.score_thr) > 1 else f"thr_{self.score_thr[0]}"
+            else:
+                name = f"thr_{self.score_thr}"
+
             # Store metrics for this threshold
-            metrics[f"thr_{self.score_thr[i]}"] = {
+            metrics[name] = {
                 "TP": tp,
                 "FP": fp,
                 "TN": tn,

@@ -243,15 +243,18 @@ class PretrainedModels:
 
         print(f"device = {training_args.device}")
 
-        train_res = self.trainer.train()
+        self.trainer.train()
         print("..train ended")
 
-        best_model_file_path = os.path.join(self.output_dir, "best_performing_model")
+        if idx_shadow is None:   
+            best_model_file_path = os.path.join(self.output_dir, "best_performing_model")
+        else:
+            best_model_file_path = os.path.join(self.output_dir, f"best_performing_model_idx_shadow_{idx_shadow}")
         os.makedirs(self.output_dir, exist_ok=True)
         self.trainer.save_model(best_model_file_path)
     
         print("..metric evaluation on the test set")
-        eval_test_results = self.trainer.evaluate(eval_dataset=test_data)
+        self.trainer.evaluate(eval_dataset=test_data)
 
 
         # Create fine-tuning details object based on instance attributes
@@ -276,7 +279,11 @@ class PretrainedModels:
         }
 
         # Define output file path for saving
-        output_file_path = os.path.join(self.output_dir, "fine_tuning_details.json")
+        print(f"idx_shadow = {idx_shadow}")
+        if idx_shadow is None:   
+            output_file_path = os.path.join(self.output_dir, "fine_tuning_details.json")
+        else:
+            output_file_path = os.path.join(self.output_dir, f"fine_tuning_details_idx_shadow_{idx_shadow}.json")
         os.makedirs(self.output_dir, exist_ok=True)
         # Save fine-tuning details to JSON file
         with open(output_file_path, "w") as json_file:
