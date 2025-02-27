@@ -14,11 +14,11 @@ class AttackLira(ShadowAttack, ThresholdAttack):
         attack_options_parser = argparse.ArgumentParser(description="lira options parser")
         attack_options_parser.add_argument("-lira_variant", "--lira-variant", type=str, help="either 'online' or 'offline'", default='online')
         attack_options_parser.add_argument("-global_vars", "--global-vars", type=bool, help="determines if the loss distribution variance should be estimated globally or per-sample", default='online')
-        attack_options_parser.add_argument("-use_data_percentage", "--use-data-percentage", type=bool, help="determines the percentage of samples that are used in each shadow model training", default=50)
+        attack_options_parser.add_argument("-use_data_percentage_lira", "--use-data-percentage-lira", type=int, help="determines the percentage of samples that are used in each shadow model training", default=50)
         attack_args, _ = attack_options_parser.parse_known_args(input_args)
         self.lira_variant = attack_args.lira_variant
         self.global_vars = attack_args.global_vars
-        self.use_data_percentage = attack_args.use_data_percentage
+        self.use_data_percentage_lira = attack_args.use_data_percentage_lira
 
     def fit_gaussian(self, data):
         """
@@ -31,7 +31,6 @@ class AttackLira(ShadowAttack, ThresholdAttack):
             mean (float): Estimated mean of the Gaussian distribution.
             variance (float): Estimated variance of the Gaussian distribution.
         """
-        print(data)
         mean = data.mean() 
         var = data.var()    
         return mean, var
@@ -52,7 +51,7 @@ class AttackLira(ShadowAttack, ThresholdAttack):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
         wdataset = attack_options['wdataset']
-        wdataset.sample_n_in_k(self.num_shadow_models, self.use_data_percentage)
+        wdataset.sample_n_in_k(self.num_shadow_models, self.use_data_percentage_lira, attack_dataset)
         if self.lira_variant == "offline":
             in_indices = []
             out_indices = [list(range(self.num_shadow_models)) for _ in range(len(attack_dataset))]

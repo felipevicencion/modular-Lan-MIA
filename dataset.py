@@ -84,7 +84,50 @@ class Dataset:
                 splits[i] = np.append(splits[i], idx)
             self.shadow_datasets = [(self.train_data[split], self.test_data[split]) for split in splits]
 
-        def sample_n_in_k(self, k, samples_percentage):
+        def dataset_difference(self, dataset_a, dataset_b):
+            """
+            Returns a dataset that contains all samples present in dataset_a but not in dataset_b.
+
+            Args:
+                dataset_a (Dataset): The first dataset (samples to retain).
+                dataset_b (Dataset): The second dataset (samples to remove).
+
+            Returns:
+                Dataset: A new dataset containing elements in dataset_a but not in dataset_b.
+            """
+            
+            # print(dataset_a[0])
+            # print(dataset_a.column_names)
+            # print(dataset_b[0])
+            # print(dataset_b.column_names)
+            # Convert dataset_b into a set of tuples for fast lookups
+            def safe_get(example, key, default=None):
+                """Helper function to safely get a key from a dictionary"""
+                return example[key] if key in example else default
+
+            set_b = set(
+                tuple(
+                    tuple(safe_get(example, key, default=None) if isinstance(safe_get(example, key, default=None), list) 
+                        else safe_get(example, key, default=None) 
+                    for key in dataset_b.column_names)
+                ) 
+                for example in dataset_b
+            )
+
+            def is_unique_to_a(example):
+                """
+                Check if an example from dataset_a is NOT in dataset_b.
+                """
+                example_tuple = tuple(tuple(example[key]) if isinstance(example[key], list) else example[key] 
+                                    for key in dataset_a.column_names)
+                return example_tuple not in set_b
+
+            filtered_dataset = dataset_a.filter(is_unique_to_a)
+            
+            return filtered_dataset
+
+
+        def sample_n_in_k(self, k, samples_percentage, attack_dataset):
             """
             Samples `n` data points for each of the `k` subsets. The subsets are not necessarily disjoint.
     
@@ -95,10 +138,17 @@ class Dataset:
             Attributes Modified:
                 - self.shadow_datasets: A list of `k` shadow datasets.
             """
-            combined_dataset = datasets.concatenate_datasets([self.train_data, self.test_data])
+            combined_dataset = datasets.concatenate_datasets([self.train_data, self.val_data, self.test_data])
+            # print(f"len(combined_dataset) = {len(combined_dataset)}")
+            combined_dataset = self.dataset_difference(combined_dataset, attack_dataset)
+            print(len(combined_dataset))
             self.shadow_datasets = []
             for _ in range(k):
-                sampled_indices = np.random.choice(np.arange(len(combined_dataset)), size=int( float(len(combined_dataset) * samples_percentage) / 100 ), replace=False)
+                shadow_data_size = int( float(len(combined_dataset) * samples_percentage) / 100 )
+                print(f"shadow_data_size = {shadow_data_size}")
+                sampled_indices = np.random.choice(np.arange(len(combined_dataset)), size=shadow_data_size, replace=False)
+                new_data = combined_dataset.select(sampled_indices)
+                print(len(new_data))
                 self.shadow_datasets.append(combined_dataset.select(sampled_indices)) 
 
 
@@ -138,7 +188,7 @@ class Dataset:
                 out_indices (list): Indices of the datasets that were not chosen for a sample.
             """
             num_shadow_datasets = len(self.shadow_datasets)
-            print(num_shadow_datasets)
+            print(f"num_shadow_datasets ={num_shadow_datasets}")
             if num_shadow_datasets <= 1:
                 raise ValueError("Number of shadow datasets should be >= 2.")
             in_indices = []  

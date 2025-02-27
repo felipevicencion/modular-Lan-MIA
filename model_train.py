@@ -133,6 +133,7 @@ class PretrainedModels:
         val_data = tokenize_data(self.tokenizer, val_data, self.max_sequence_length)
         wdataset.train_data = train_data
         wdataset.test_data = test_data
+        wdataset.val_data = val_data
         trainer = transformers.Trainer(
             model=self.model,
             compute_metrics=self.compute_metrics,
@@ -254,7 +255,7 @@ class PretrainedModels:
         self.trainer.save_model(best_model_file_path)
     
         print("..metric evaluation on the test set")
-        self.trainer.evaluate(eval_dataset=test_data)
+        # self.trainer.evaluate(eval_dataset=test_data)
 
 
         # Create fine-tuning details object based on instance attributes
