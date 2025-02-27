@@ -283,8 +283,8 @@ class ThresholdAttack(MetricAttack):
 
         for i in range(num_thresholds):
             preds = predicted_labels[:, i]  # Get predictions for threshold i
-            # preds = torch.tensor(preds, dtype=torch.long)
-            preds = preds.clone().detach().to(torch.long)
+            preds = torch.tensor(preds, dtype=torch.long)
+            # preds = preds.clone().detach().to(torch.long)
             
             # Compute TP, FP, TN, FN
             tp = torch.sum((true_labels == 1) & (preds == 1)).item()
@@ -320,5 +320,14 @@ class ThresholdAttack(MetricAttack):
                 "TPR": tpr,
                 "Adv": adv
             }
+        
+        all_f1_scores = [metrics[key]["F1 Score"] for key in metrics]
+        all_accuracies = [metrics[key]["Accuracy"] for key in metrics]
+
+        max_f1 = max(all_f1_scores)
+        max_accuracy = max(all_accuracies)
+
+        print(f"Maximum F1 Score: {max_f1:.4f}")
+        print(f"Maximum Accuracy: {max_accuracy:.4f}")
 
         return metrics

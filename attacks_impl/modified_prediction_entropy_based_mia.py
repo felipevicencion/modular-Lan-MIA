@@ -13,8 +13,9 @@ class AttackModifiedPredictionEntropyBasedMia(ThresholdAttack):
         predictions_output = trainer.predict(attack_dataset)
         predictions = predictions_output.predictions
         probabilities = scipy.special.softmax(predictions, axis=1)
-        modified_sample_entropies = np.apply_along_axis(scipy.stats.entropy, axis=1, arr=probabilities, base=10)
+        modified_sample_entropies = -np.sum( probabilities * np.log10(1 - probabilities), axis=1) 
         label_ids = predictions_output.label_ids
         py = probabilities[np.arange(probabilities.shape[0]), label_ids]
-        modified_entropy = modified_sample_entropies + (1+2*py) * np.log(py)
-        self.membership_pred = torch.tensor( (modified_entropy <= attack_options['confidence_thr']).astype(int) )
+        modified_entropy = modified_sample_entropies + py * np.log10(1-py) - (1-py) * np.log10(py)
+        self.membership_pred = self.thresholds_comp(modified_entropy, self.score_thr) # matrix of shape (len(scores), len(thrs)) 
+        self.plot_roc_curves(self.membership_pred, membership_true, f"{self.output_dir}/{self.output_name}")

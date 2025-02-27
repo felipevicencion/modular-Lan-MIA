@@ -30,10 +30,6 @@ class Dataset:
                 sample: The sample to add.
                 target_dataset: The dataset to add the sample to train.
             """
-            # print(f"type(target_dataset) = {type(target_dataset)}")
-            # print(f"type(sample) = {type(sample)}")
-            # print(target_dataset)
-            # print(sample)
             combined_dataset = datasets.concatenate_datasets([target_dataset, sample])
             return combined_dataset
             
