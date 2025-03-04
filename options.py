@@ -10,7 +10,7 @@ class Options():
         # self.parser.add_argument("-dataset", "--dataset", help = "specifies a dataset on which an attack is to be performed", default = "IMDb")
         self.parser.add_argument("-torch_num_threads", "--torch-num-threads", help = "number of CPU threads PyTorch uses for parallel operations", default = 1)
         # self.parser.add_argument("-model_name", "--model-name", help = "name of the pretrained NLP model", default = "roberta-base")
-        # self.parser.add_argument("-task", "--task", help = "descibes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
+        self.parser.add_argument("-task", "--task", help = "descibes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
         # self.parser.add_argument("-max_sequence_length", "--max-sequence-length", help = "maximum sequence length", default = 512)
         self.parser.add_argument("-seed", "--seed", help = "setting seed value for all random calculations", default = 1)
 

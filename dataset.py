@@ -11,6 +11,7 @@ class Dataset:
             dataset_options_parser.add_argument("-dataset_name", "--dataset-name", type=str, help="Defining the name of the dataset configuration", default=None)
             dataset_options_parser.add_argument("-use_data_percentage", "--use-data-percentage", type=int, help="Defining the percentage of the data to be used", default=100)
             dataset_options_parser.add_argument("-val_size", "--val-size", type=float, help = "Size of the validation set as ratio of the train set", default = 0.1)
+            # dataset_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
             dataset_args, _ = dataset_options_parser.parse_known_args(input_args)
             self.dataset_path = dataset_args.dataset_path
             self.dataset_name = dataset_args.dataset_name
@@ -36,7 +37,14 @@ class Dataset:
             """
             combined_dataset = datasets.concatenate_datasets([target_dataset, sample])
             return combined_dataset
-            
+
+        def load_dataset(self):
+
+            if self.dataset_name is not None:
+                self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name)
+            else:
+                self.data = datasets.load_dataset(self.dataset_path)
+
         def train_test_val_split(self):
             """
             Load a specified dataset, split it into training and testing sets, and subset 

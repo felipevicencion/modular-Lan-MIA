@@ -100,9 +100,11 @@ Once {num-trials} attacks are performed we summarize theit effectivness through 
 # Suggested datasets
 | Dataset | Description |
 | --- | --- |
-| `imdb` | IMDb dataset contains 50,000 movie reviews labeled as either positive or negative. The dataset is balanced, with an equal number of positive and negative reviews. It is divided into 25,000 reviews for training and 25,000 for testing. |
+| `stanfordnlp/imdb` | IMDb dataset contains 50,000 movie reviews labeled as either positive or negative. The dataset is balanced, with an equal number of positive and negative reviews. It is divided into 25,000 reviews for training and 25,000 for testing. |
 | `yelp_polarity` | The Yelp Polarity Dataset is a text classification dataset consisting of 560,000 reviews from the Yelp website. Reviews are labeled with one of two possible sentiments: Positive (4 or 5 stars) and Negative (1 or 2 stars). Neutral reviews (3 stars) are not included. The dataset is split into 560,000 reviews for training and 38,000 for testing. | 
 | `mteb/amazon_reviews_multi` | The Amazon Multilingual Reviews dataset (English subset) is a text classification dataset containing customer reviews from Amazon across multiple product categories. Each review includes a 1-to-5 star rating, a title, and a review body. The dataset is divided into 200,000 reviews for training, 5,000 for validation, and 5,000 for testing. It is useful for sentiment analysis and multilingual NLP research. |
+| `swj0419/WikiMIA` |  The WikiMIA dataset is a benchmark dataset designed to evaluate models' memorization and generalization abilities. Derived from Wikipedia text, it consists of subsets categorized by text length: 32, 64, 128, and 256 tokens. Each entry contains a text snippet and a label indicating whether the snippet was seen (1) or unseen (0) during pretraining. The default subset length is 64 tokens. Each subset contains approximately 1,650 samples, meaning the entire dataset has around 6,600 samples. This dataset is valuable for studying memorization effects and evaluating generalization in NLP models. |
+| `iamgroot42/mimir`| The MIMIR dataset includes subsets from various sources like arXiv, GitHub, and Wikipedia, with samples containing both "member" and "nonmember" texts. The dataset is split into n-gram filtered versions, allowing for different levels of data filtering. |
 
 # Covered NLP models
 | Model name | Description |

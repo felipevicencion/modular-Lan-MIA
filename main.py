@@ -23,10 +23,14 @@ attack_name = args.attack_name
 run_mode = args.run_mode
 output_dir = args.output_dir
 log_dir = args.log_dir
+task = args.task
 
 #### loading a dataset
 wdataset = Dataset(all_args)
-wdataset.train_test_val_split()
+if task == 'classification':    
+    wdataset.train_test_val_split()
+elif task == 'generative':
+    wdataset.load_dataset()
 
 if run_mode == 'fine-tunning':
     print("..fine-tunning of pretrained NLP model")
