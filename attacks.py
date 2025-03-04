@@ -30,16 +30,12 @@ class Attack:
             self.attack_name = attack_args.attack_name
             self.num_trials = attack_args.num_trials
             self.score_thr = parse_thresholds(str(attack_args.score_thr))
-            # self.score_thr = attack_args.score_thr
             self.max_sequence_length = attack_args.max_sequence_length
             self.output_dir = attack_args.output_dir
             self.output_name = attack_args.output_name
             if self.output_name is None:
                 self.output_name = self.attack_name
             self.confidence_thr = attack_args.confidence_thr
-            
-            # self.attack_name = attack_name
-            # self.num_trials = num_trials
             self.num_trials_per_cat = int( 0.5 * self.num_trials )
             self.mia_metrics = {}
 
@@ -138,10 +134,40 @@ class Attack:
         # attack_options is a dictionary containing additional inputs and parameters required to performa MIAs such as thresold values and other
         if self.attack_name not in ['recall', 'zlib', 'mink']:
             # train_data, test_data = tokenize_data(attack_options['tokenizer'], train_data, test_data, attack_options['max_sequence_length'])
-            train_data = tokenize_data(attack_options['tokenizer'], train_data, self.max_sequence_length)
-            test_data = tokenize_data(attack_options['tokenizer'], test_data, self.max_sequence_length)
-        shf_train_data = train_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
-        shf_test_data = test_data.shuffle(seed=42).select(range(self.num_trials_per_cat))
+            wdataset.train_data = tokenize_data(attack_options['tokenizer'], train_data, self.max_sequence_length)
+            wdataset.test_data = tokenize_data(attack_options['tokenizer'], test_data, self.max_sequence_length)
+            if wdataset.val_data is not None:
+                wdataset.val_data = tokenize_data(attack_options['tokenizer'], wdataset.val_data, self.max_sequence_length)
+
+
+        # Add an index column if not already present
+        if "index" not in wdataset.train_data.column_names:
+            wdataset.train_data = wdataset.train_data.add_column("index", list(range(len(wdataset.train_data))))
+        if "index" not in wdataset.test_data.column_names:
+            wdataset.test_data = wdataset.test_data.add_column("index", list(range(len(wdataset.test_data))))
+
+        # Shuffle dataset
+        shuffled_train = wdataset.train_data.shuffle(seed=42)
+        shuffled_test = wdataset.test_data.shuffle(seed=42)
+
+        # Select subset
+        shf_train_data = shuffled_train.select(range(self.num_trials_per_cat))
+        shf_test_data = shuffled_test.select(range(self.num_trials_per_cat))
+
+        # Extract the original indices from the shuffled data
+        train_shuffle_order = list(shf_train_data["index"])
+        test_shuffle_order = list(shf_test_data["index"])
+
+        # Store in dictionary
+        self.attack_indices = {
+            "train": train_shuffle_order,
+            "test": test_shuffle_order
+        }
+
+        # Remove the index column from the datasets
+        wdataset.train_data = wdataset.train_data.remove_columns(["index"])
+        wdataset.test_data = wdataset.test_data.remove_columns(["index"])
+
         attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
         self.membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
         start_time_perform_attack = time.time()

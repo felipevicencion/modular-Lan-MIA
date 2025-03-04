@@ -2,7 +2,6 @@ from dataset import *
 from model_train import *
 from attacks import *
 import torch
-# import datasets
 import os
 import sys
 from options import *
@@ -27,7 +26,7 @@ log_dir = args.log_dir
 
 #### loading a dataset
 wdataset = Dataset(all_args)
-wdataset.train_test_split()
+wdataset.train_test_val_split()
 
 if run_mode == 'fine-tunning':
     print("..fine-tunning of pretrained NLP model")
@@ -37,12 +36,18 @@ if run_mode == 'fine-tunning':
 
 elif run_mode == 'attack':
     wmodel = PretrainedModels(all_args)
-    trainer, model, tokenizer = wmodel.prepare_model(wdataset)
+    # trainer, model, tokenizer = wmodel.prepare_model(wdataset)
+    trainer = transformers.Trainer(
+        model=wmodel.model,
+        compute_metrics=wmodel.compute_metrics,
+        train_dataset=wdataset.train_data,
+        eval_dataset=wdataset.val_data
+    )
     attack_options = {
         'load_model_dir': load_model_dir,
-        'tokenizer' : tokenizer,
+        'tokenizer' : wmodel.tokenizer,
         'trainer' : trainer,
-        'model' : model,
+        'model' : wmodel.model,
         'wdataset' : wdataset
     }
     print(f"..performing attack {attack_name}")

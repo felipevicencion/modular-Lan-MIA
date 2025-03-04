@@ -27,7 +27,6 @@ class PretrainedModels:
         model_options_parser.add_argument("-learning_rate", "--learning-rate", type=float, help = "Learning rate used in fine-tunning", default = 2e-5)
         model_options_parser.add_argument("-weight_decay", "--weight-decay", type=float, help = "Weight decay parameter used in fine-tunning", default = 0.01)
         model_options_parser.add_argument("-warmup_ratio", "--warmup-ratio", type=float, help = "Warmup ratio parameter used in fine-tunning", default = 0.1)
-        model_options_parser.add_argument("-val_size", "--val-size", type=float, help = "Size of the validation set as ratio of the train set", default = 0.1)
         model_options_parser.add_argument("-num_classes", "--num-classes", type=int, help = "Number of classes for the classification task", default = 2)
      
         model_args, _ = model_options_parser.parse_known_args(input_args)
@@ -44,7 +43,7 @@ class PretrainedModels:
         self.learning_rate = model_args.learning_rate
         self.weight_decay = model_args.weight_decay
         self.warmup_ratio = model_args.warmup_ratio
-        self.val_size = model_args.val_size
+        # self.val_size = model_args.val_size
         self.num_classes = model_args.num_classes
         # self.model_name = model_options['model_name']
         # self.max_sequence_length = model_options['max_sequence_length']
@@ -106,42 +105,55 @@ class PretrainedModels:
                 # tokens = self.model.generate(**inputs, max_length=30, num_return_sequences=1)
                 # print(self.tokenizer.decode(tokens[0]))
 
-    def prepare_model(self, wdataset):
-        """
-        Parameters:
-            wdataset: A dataset object 
-        Returns:
-            tuple: A tuple containing:
-                   - trainer (transformers.Trainer): Configured Trainer object for model training.
-                   - model: The prepared model.
-                   - tokenizer: The corresponding tokenizer.
-        """
-        # fetch train and test data
-        train_data, test_data = wdataset.get_train_test()
-        if self.task == 'classification':
-            self.num_classes = len(set(train_data.to_pandas()["label"]))
-            self.model.config.num_labels = self.num_classes
-            print(f"..num_classes = {self.num_classes}")
+    # def prepare_model(self, wdataset):
+    #     """
+    #     Parameters:
+    #         wdataset: A dataset object 
+    #     Returns:
+    #         tuple: A tuple containing:
+    #                - trainer (transformers.Trainer): Configured Trainer object for model training.
+    #                - model: The prepared model.
+    #                - tokenizer: The corresponding tokenizer.
+    #     """
+    #     # fetch train and test data
+    #     train_data, test_data = wdataset.get_train_test()
+    #     if self.task == 'classification':
+    #         self.num_classes = len(set(train_data.to_pandas()["label"]))
+    #         self.model.config.num_labels = self.num_classes
+    #         print(f"..num_classes = {self.num_classes}")
             
-        # splitting train set into validation set and exclusively train set
-        train_valid = train_data.train_test_split(test_size=self.val_size)
-        # train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data, self.max_sequence_length)
-        test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
-        val_data = train_valid["test"]
-        train_data = train_valid["train"]
-        train_data = tokenize_data(self.tokenizer, train_data, self.max_sequence_length)
-        val_data = tokenize_data(self.tokenizer, val_data, self.max_sequence_length)
-        wdataset.train_data = train_data
-        wdataset.test_data = test_data
-        wdataset.val_data = val_data
-        trainer = transformers.Trainer(
-            model=self.model,
-            compute_metrics=self.compute_metrics,
-            train_dataset=train_data,
-            eval_dataset=val_data
-        )
-        return trainer, self.model, self.tokenizer
+    #     # splitting train set into validation set and exclusively train set
+    #     train_valid = train_data.train_test_split(test_size=self.val_size)
+    #     # train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data, self.max_sequence_length)
+    #     test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
+    #     val_data = train_valid["test"]
+    #     train_data = train_valid["train"]
+    #     train_data = tokenize_data(self.tokenizer, train_data, self.max_sequence_length)
+    #     val_data = tokenize_data(self.tokenizer, val_data, self.max_sequence_length)
+    #     wdataset.train_data = train_data
+    #     wdataset.test_data = test_data
+    #     wdataset.val_data = val_data
+    #     trainer = transformers.Trainer(
+    #         model=self.model,
+    #         compute_metrics=self.compute_metrics,
+    #         train_dataset=train_data,
+    #         eval_dataset=val_data
+    #     )
+    #     return trainer, self.model, self.tokenizer
 
+    # def prepare_val_set(self, wdataset):
+    #     """
+    #     Parameters:
+    #         wdataset: A dataset object 
+    #     """
+    #     train_data, test_data = wdataset.get_train_test()
+    #     train_valid = train_data.train_test_split(test_size=self.val_size)
+    #     val_data = train_valid["test"]
+    #     train_data = train_valid["train"]
+    #     wdataset.train_data = train_data
+    #     wdataset.test_data = test_data
+    #     wdataset.val_data = val_data
+    
     def compute_metrics(self, pred):
         """
         Compute evaluation metrics for the model based on predictions.
@@ -198,20 +210,17 @@ class PretrainedModels:
             train_data = wdataset.shadow_datasets[idx_shadow]
         
         # load model and tokenizer and define length of the text sequence, number of classes
-        self.num_classes = len(set(train_data.to_pandas()["label"]))
         self.model.config.num_labels = self.num_classes
-        # print(self.model.config.num_labels)
         print(f"..num_classes = {self.num_classes}")
-        # print(set(train_data.to_pandas()["label"]))
 
-        # splitting train set into validation set and exclusively train set
-        train_valid = train_data.train_test_split(test_size=self.val_size)
-        test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
-        val_data = train_valid["test"]
-        train_data = train_valid["train"]
-        val_data = tokenize_data(self.tokenizer, val_data, self.max_sequence_length)
-        train_data = tokenize_data(self.tokenizer, train_data, self.max_sequence_length)
-        test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
+        # # splitting train set into validation set and exclusively train set
+        # train_valid = train_data.train_test_split(test_size=self.val_size)
+        # test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
+        # val_data = train_valid["test"]
+        # train_data = train_valid["train"]
+        val_data = tokenize_data(self.tokenizer, wdataset.val_data, self.max_sequence_length)
+        train_data = tokenize_data(self.tokenizer, wdataset.train_data, self.max_sequence_length)
+        test_data = tokenize_data(self.tokenizer, wdataset.test_data, self.max_sequence_length)
 
         # define the training arguments
         training_args = transformers.TrainingArguments(

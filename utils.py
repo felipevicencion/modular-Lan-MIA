@@ -186,7 +186,7 @@ def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device)
 # function to tokenize train and test data
 def tokenize_data(tokenizer, data, max_sequence_length):
     """
-    Tokenizes the train and test datasets.
+    Tokenizes the dataset only if it has not been tokenized.
 
     Parameters:
         tokenizer: Tokenizer to convert text into input IDs, attention masks, etc.
@@ -194,12 +194,18 @@ def tokenize_data(tokenizer, data, max_sequence_length):
         max_sequence_length (int): Maximum token length for truncation and padding.
 
     Returns:
-        tuple: Tokenized dataset.
+        Dataset: Tokenized dataset.
     """
+    # Check if dataset is already tokenized
+    if all(col in data.column_names for col in ['input_ids', 'attention_mask']):
+        return data  # Return as is if already tokenized
+
     tokenize_data = lambda batch: tokenizer(batch['text'], max_length=max_sequence_length, padding=True, truncation=True)
     data = data.map(tokenize_data, batched=True, batch_size=len(data))
+    data = data.remove_columns(['text'])
     data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
     return data
+
 
 def capitalize_after_underscore(input_string):
     """

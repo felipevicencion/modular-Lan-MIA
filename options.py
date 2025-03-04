@@ -12,7 +12,7 @@ class Options():
         # self.parser.add_argument("-model_name", "--model-name", help = "name of the pretrained NLP model", default = "roberta-base")
         # self.parser.add_argument("-task", "--task", help = "descibes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
         # self.parser.add_argument("-max_sequence_length", "--max-sequence-length", help = "maximum sequence length", default = 512)
-        self.parser.add_argument("-seed", "--seed", help = "setting seed value for all random calculations", default = 0)
+        self.parser.add_argument("-seed", "--seed", help = "setting seed value for all random calculations", default = 1)
 
         ## model parameters
         # self.parser.add_argument("-use_float16", "--use-float16", help = "whether or not to store weight in 16 bit floats", default = False)

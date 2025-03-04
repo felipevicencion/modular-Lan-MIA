@@ -51,7 +51,7 @@ class AttackLira(ShadowAttack, ThresholdAttack):
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
         wdataset = attack_options['wdataset']
-        wdataset.sample_n_in_k(self.num_shadow_models, self.use_data_percentage_lira, attack_dataset)
+        wdataset.sample_n_in_k(self.num_shadow_models, self.use_data_percentage_lira, self.attack_indices)
         if self.lira_variant == "offline":
             in_indices = []
             out_indices = [list(range(self.num_shadow_models)) for _ in range(len(attack_dataset))]
