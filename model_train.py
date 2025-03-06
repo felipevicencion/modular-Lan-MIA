@@ -140,19 +140,6 @@ class PretrainedModels:
     #         eval_dataset=val_data
     #     )
     #     return trainer, self.model, self.tokenizer
-
-    # def prepare_val_set(self, wdataset):
-    #     """
-    #     Parameters:
-    #         wdataset: A dataset object 
-    #     """
-    #     train_data, test_data = wdataset.get_train_test()
-    #     train_valid = train_data.train_test_split(test_size=self.val_size)
-    #     val_data = train_valid["test"]
-    #     train_data = train_valid["train"]
-    #     wdataset.train_data = train_data
-    #     wdataset.test_data = test_data
-    #     wdataset.val_data = val_data
     
     def compute_metrics(self, pred):
         """

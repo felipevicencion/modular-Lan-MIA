@@ -15,19 +15,26 @@ class AttackMink(ThresholdAttack):
 
     def run_attack(self, attack_dataset, membership_true, attack_options):
         self.model = attack_options['model']
-        # self.score_thr = attack_options['score_thr']
-        # self.max_length = attack_options['max_length']
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
-        for ind_ex, ex in enumerate(tqdm(attack_dataset)):
-            input_ids = torch.tensor(self.tokenizer.encode(ex["text"])).unsqueeze(0).to(self.device)
+        mink_scores = []
+        for _, ex in enumerate(tqdm(attack_dataset)):
             with torch.no_grad():
-                outputs = self.model(input_ids, labels=input_ids)
+                inputs = ex['input_ids'].unsqueeze(0).to(self.device) 
+                outputs = self.model(inputs, labels=inputs)
             _, logits = outputs[:2]
+            inputs = inputs[0][1:].unsqueeze(-1)
             log_probs = torch.nn.functional.log_softmax(logits[0, :-1], dim=-1)
-            token_log_probs = log_probs.gather(dim=-1, index=input_ids).squeeze(-1)
+            token_log_probs = log_probs.gather(dim=-1, index=inputs).squeeze(-1)
             k_length = int(len(token_log_probs) * self.mink_ratio)
             topk = np.sort(token_log_probs.cpu())[:k_length]
             mink_score = np.mean(topk).item()
-            self.membership_pred[ind_ex] = int(mink_score >= self.score_thr)
+            mink_scores.append(mink_score)
+        print(f"mink_scores = {mink_scores}")
+        thrs = self.score_thr
+        if self.num_score_thr > 0:
+            thrs = torch.linspace(min(mink_scores), max(mink_scores), steps=self.num_score_thr).tolist()
+        self.membership_pred = self.thresholds_comp(mink_scores, thrs, "ge") # matrix of shape (len(scores), len(thrs)) 
+        self.plot_roc_curves(self.membership_pred, membership_true, f"{self.output_dir}/{self.output_name}")
+        

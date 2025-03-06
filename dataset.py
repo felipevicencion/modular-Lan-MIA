@@ -11,6 +11,7 @@ class Dataset:
             dataset_options_parser.add_argument("-dataset_name", "--dataset-name", type=str, help="Defining the name of the dataset configuration", default=None)
             dataset_options_parser.add_argument("-use_data_percentage", "--use-data-percentage", type=int, help="Defining the percentage of the data to be used", default=100)
             dataset_options_parser.add_argument("-val_size", "--val-size", type=float, help = "Size of the validation set as ratio of the train set", default = 0.1)
+            dataset_options_parser.add_argument("-split", "--split", type=str, help = "Refers to a subset of a dataset, used for different stages of model training and evaluation", default = "WikiMIA_length64")
             # dataset_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
             dataset_args, _ = dataset_options_parser.parse_known_args(input_args)
             self.dataset_path = dataset_args.dataset_path
@@ -22,6 +23,7 @@ class Dataset:
             self.indices_test = None
             self.indices_train_val= None
             self.val_data = None 
+            self.split = dataset_args.split
             # self.indices_val = None
 
         def get_train_test(self):
@@ -40,10 +42,15 @@ class Dataset:
 
         def load_dataset(self):
 
-            if self.dataset_name is not None:
+            if self.dataset_name is not None and self.split is not None:
+                self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split = self.split)
+            elif self.dataset_name is None and self.split is not None:
+                self.data = datasets.load_dataset(path = self.dataset_path, split = self.split)
+            elif self.dataset_name is not None and self.split is None:
                 self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name)
             else:
                 self.data = datasets.load_dataset(self.dataset_path)
+            self.data = self.data.rename_column("input", "text")
 
         def train_test_val_split(self):
             """

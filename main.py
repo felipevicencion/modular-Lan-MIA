@@ -52,7 +52,8 @@ elif run_mode == 'attack':
         'tokenizer' : wmodel.tokenizer,
         'trainer' : trainer,
         'model' : wmodel.model,
-        'wdataset' : wdataset
+        'wdataset' : wdataset,
+        'task' : task
     }
     print(f"..performing attack {attack_name}")
     #### performing an attack

@@ -20,6 +20,7 @@ class Attack:
             attack_options_parser.add_argument("-attack_name", "--attack-name", type=str, help = "Name of an attack to be performed", default = "prediction_loss_based_mia")
             attack_options_parser.add_argument("-num_trials", "--num-trials", type=int, help = "Number of trials of an attack to be performed", default = 500)
             attack_options_parser.add_argument("-score_thr", "--score-thr", type=str, help = "Thresholds to be used for attacks based on scores", default = 1.002)
+            attack_options_parser.add_argument("-num_score_thr", "--num-score-thr", type=int, help = "Number of thresholds to be used for attacks based on scores", default = 0)
             attack_options_parser.add_argument("-max_sequence_length", "--max-sequence-length", type=int, help = "Maximum sequence length", default = 512)
             attack_options_parser.add_argument("-output_dir", "--output-dir", type=str, help = "Location of the output directory", default = None)
             attack_options_parser.add_argument("-output_name", "--output-name", type=str, help = "Name of the output file", default = None)  
@@ -29,7 +30,9 @@ class Attack:
             attack_args, _ = attack_options_parser.parse_known_args(input_args)
             self.attack_name = attack_args.attack_name
             self.num_trials = attack_args.num_trials
+            print(attack_args.score_thr)
             self.score_thr = parse_thresholds(str(attack_args.score_thr))
+            self.num_score_thr = attack_args.num_score_thr
             self.max_sequence_length = attack_args.max_sequence_length
             self.output_dir = attack_args.output_dir
             self.output_name = attack_args.output_name
@@ -130,46 +133,45 @@ class Attack:
         Returns:
             dict: A dictionary containing MIA metrics computed after the attack.
         """
-        train_data, test_data = wdataset.get_train_test()
-        # attack_options is a dictionary containing additional inputs and parameters required to performa MIAs such as thresold values and other
-        if self.attack_name not in ['recall', 'zlib', 'mink']:
+        # attack_options is a dictionary containing additional inputs and parameters required to performa MIAs 
+        if attack_options['task'] == 'classification':
+            #  if self.attack_name not in ['recall', 'zlib', 'mink']:
             # train_data, test_data = tokenize_data(attack_options['tokenizer'], train_data, test_data, attack_options['max_sequence_length'])
-            wdataset.train_data = tokenize_data(attack_options['tokenizer'], train_data, self.max_sequence_length)
-            wdataset.test_data = tokenize_data(attack_options['tokenizer'], test_data, self.max_sequence_length)
+            wdataset.train_data = tokenize_data(attack_options['tokenizer'], wdataset.train_data, self.max_sequence_length)
+            wdataset.test_data = tokenize_data(attack_options['tokenizer'], wdataset.test_data, self.max_sequence_length)
             if wdataset.val_data is not None:
                 wdataset.val_data = tokenize_data(attack_options['tokenizer'], wdataset.val_data, self.max_sequence_length)
+            # Add an index column if not already present
+            if "index" not in wdataset.train_data.column_names:
+                wdataset.train_data = wdataset.train_data.add_column("index", list(range(len(wdataset.train_data))))
+            if "index" not in wdataset.test_data.column_names:
+                wdataset.test_data = wdataset.test_data.add_column("index", list(range(len(wdataset.test_data))))
+            # Shuffle dataset
+            shuffled_train = wdataset.train_data.shuffle(seed=42)
+            shuffled_test = wdataset.test_data.shuffle(seed=42)
+            # Select subset
+            shf_train_data = shuffled_train.select(range(self.num_trials_per_cat))
+            shf_test_data = shuffled_test.select(range(self.num_trials_per_cat))
+            # Extract the original indices from the shuffled data
+            train_shuffle_order = list(shf_train_data["index"])
+            test_shuffle_order = list(shf_test_data["index"])
+            # Store in dictionary
+            self.attack_indices = {
+                "train": train_shuffle_order,
+                "test": test_shuffle_order
+            }
+            # Remove the index column from the datasets
+            wdataset.train_data = wdataset.train_data.remove_columns(["index"])
+            wdataset.test_data = wdataset.test_data.remove_columns(["index"])
+            attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
+            self.membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
 
-
-        # Add an index column if not already present
-        if "index" not in wdataset.train_data.column_names:
-            wdataset.train_data = wdataset.train_data.add_column("index", list(range(len(wdataset.train_data))))
-        if "index" not in wdataset.test_data.column_names:
-            wdataset.test_data = wdataset.test_data.add_column("index", list(range(len(wdataset.test_data))))
-
-        # Shuffle dataset
-        shuffled_train = wdataset.train_data.shuffle(seed=42)
-        shuffled_test = wdataset.test_data.shuffle(seed=42)
-
-        # Select subset
-        shf_train_data = shuffled_train.select(range(self.num_trials_per_cat))
-        shf_test_data = shuffled_test.select(range(self.num_trials_per_cat))
-
-        # Extract the original indices from the shuffled data
-        train_shuffle_order = list(shf_train_data["index"])
-        test_shuffle_order = list(shf_test_data["index"])
-
-        # Store in dictionary
-        self.attack_indices = {
-            "train": train_shuffle_order,
-            "test": test_shuffle_order
-        }
-
-        # Remove the index column from the datasets
-        wdataset.train_data = wdataset.train_data.remove_columns(["index"])
-        wdataset.test_data = wdataset.test_data.remove_columns(["index"])
-
-        attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
-        self.membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
+        elif attack_options['task'] == 'generative':
+            print(wdataset.data.column_names)
+            attack_dataset = tokenize_data(attack_options['tokenizer'], wdataset.data, self.max_sequence_length)
+            print(f"len(attack_dataset) = {len(attack_dataset)}")
+            self.membership_true = attack_dataset['label']
+            
         start_time_perform_attack = time.time()
         self.run_attack(attack_dataset, self.membership_true, attack_options)
         end_time_perform_attack = time.time()
@@ -229,13 +231,14 @@ class ThresholdAttack(MetricAttack):
     def __init__(self, input_args):
         super().__init__(input_args)
 
-    def thresholds_comp(self, scores, thrs):
+    def thresholds_comp(self, scores, thrs, direction = "le"):
         """
         Creates a membership matrix where each entry is 1 if the score is below the threshold, else 0.
         
         Parameters:
         scores (list or array-like): A list of scores for each example in the dataset.
         thrs (list or array-like): A vector of thresholds.
+        direction (str) : either "le" (less or equal) or "ge" (greater or equal) 
         
         Returns:
         np.ndarray: A binary membership matrix of shape (len(scores), len(thrs)).
@@ -243,7 +246,10 @@ class ThresholdAttack(MetricAttack):
         scores = np.array(scores).reshape(-1, 1)
         thrs = np.array(thrs).reshape(1, -1)
         
-        membership_matrix = (scores < thrs).astype(int) 
+        if direction == "le":
+            membership_matrix = (scores <= thrs).astype(int) 
+        elif direction == "ge":
+            membership_matrix = (scores >= thrs).astype(int) 
         
         return membership_matrix
 
@@ -269,12 +275,12 @@ class ThresholdAttack(MetricAttack):
         fpr_threshold = 0.05
         mask = (fpr <= fpr_threshold)
         plt.figure(figsize=(8, 6))
-        plt.plot(fpr[mask], tpr[mask], color='red', lw=2, label=f'ROC (up to 5% FDR)')
+        plt.plot(fpr[mask], tpr[mask], color='red', lw=2, marker='o', label=f'ROC (up to 5% FDR)')
         plt.xlim([0,fpr_threshold])
-        plt.ylim([0,1])
+        plt.ylim([0,1.1 * max(tpr[mask])])
         plt.xlabel('False Positive Rate (FDR)')
         plt.ylabel('True Positive Rate')
-        plt.title('ROC Curve (1% FDR)')
+        plt.title('ROC Curve (5% FDR)')
         plt.legend(loc='lower right')
         plt.savefig(f"{out_loc}_roc_curve_5percent_fpr.png")
         plt.close()
