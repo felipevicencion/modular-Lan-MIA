@@ -32,9 +32,8 @@ class AttackMink(ThresholdAttack):
             mink_score = np.mean(topk).item()
             mink_scores.append(mink_score)
         print(f"mink_scores = {mink_scores}")
-        thrs = self.score_thr
         if self.num_score_thr > 0:
-            thrs = torch.linspace(min(mink_scores), max(mink_scores), steps=self.num_score_thr).tolist()
-        self.membership_pred = self.thresholds_comp(mink_scores, thrs, "ge") # matrix of shape (len(scores), len(thrs)) 
+            self.score_thr = torch.linspace(min(mink_scores), max(mink_scores), steps=self.num_score_thr).tolist()
+        self.membership_pred = self.thresholds_comp(mink_scores, self.score_thr, "ge") # matrix of shape (len(scores), len(thrs)) 
         self.plot_roc_curves(self.membership_pred, membership_true, f"{self.output_dir}/{self.output_name}")
         

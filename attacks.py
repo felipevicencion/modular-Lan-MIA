@@ -167,9 +167,8 @@ class Attack:
             self.membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
 
         elif attack_options['task'] == 'generative':
-            print(wdataset.data.column_names)
             attack_dataset = tokenize_data(attack_options['tokenizer'], wdataset.data, self.max_sequence_length)
-            print(f"len(attack_dataset) = {len(attack_dataset)}")
+            # print(f"len(attack_dataset) = {len(attack_dataset)}")
             self.membership_true = attack_dataset['label']
             
         start_time_perform_attack = time.time()
@@ -352,14 +351,31 @@ class ThresholdAttack(MetricAttack):
                 "TPR": tpr,
                 "Adv": adv
             }
-        
+
+        all_fprs = [metrics[key]["FPR"] for key in metrics]
+        all_tprs = [metrics[key]["TPR"] for key in metrics]
+
+        # Function to find the FPR and TPR closest to a target FPR
+        def find_fpr_tpr_at_target(target_fpr, fprs, tprs):
+            closest_index = min(range(len(fprs)), key=lambda i: abs(fprs[i] - target_fpr))
+            return fprs[closest_index], tprs[closest_index]
+
+        # Find FPR and TPR at FPR closest to 0.001 and 0.000001
+        fpr_at_0_001, tpr_at_fpr_0_001 = find_fpr_tpr_at_target(0.001, all_fprs, all_tprs)
+        fpr_at_0_000001, tpr_at_fpr_0_000001 = find_fpr_tpr_at_target(0.000001, all_fprs, all_tprs)
+        print(f"At FPR closest to 0.001: FPR = {fpr_at_0_001:.6f}, TPR = {tpr_at_fpr_0_001:.6f}")
+        print(f"At FPR closest to 0.000001: FPR = {fpr_at_0_000001:.6f}, TPR = {tpr_at_fpr_0_000001:.6f}")
+
         all_f1_scores = [metrics[key]["F1 Score"] for key in metrics]
         all_accuracies = [metrics[key]["Accuracy"] for key in metrics]
+        all_advantages = [metrics[key]["Adv"] for key in metrics]
 
         max_f1 = max(all_f1_scores)
         max_accuracy = max(all_accuracies)
+        max_adv = max(all_advantages)
 
         print(f"Maximum F1 Score: {max_f1:.4f}")
         print(f"Maximum Accuracy: {max_accuracy:.4f}")
+        print(f"Maximum Advantage: {max_adv:.4f}")
 
         return metrics
