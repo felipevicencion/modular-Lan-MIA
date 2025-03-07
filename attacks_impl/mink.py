@@ -17,7 +17,7 @@ class AttackMink(ThresholdAttack):
         self.model = attack_options['model']
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
+        self.membership_pred = torch.zeros(len(attack_dataset))
         mink_scores = []
         for _, ex in enumerate(tqdm(attack_dataset)):
             with torch.no_grad():

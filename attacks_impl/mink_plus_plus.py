@@ -17,7 +17,7 @@ class AttackMinkPlusPlus(ThresholdAttack):
         self.model = attack_options['model']
         self.tokenizer = attack_options['tokenizer']
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.membership_pred = torch.zeros(2*self.num_trials_per_cat)
+        self.membership_pred = torch.zeros(len(attack_dataset))
         mink_plus_scores = []
         for _, ex in enumerate(tqdm(attack_dataset)):
             with torch.no_grad():
@@ -28,14 +28,9 @@ class AttackMinkPlusPlus(ThresholdAttack):
             probs = torch.nn.functional.softmax(logits[0, :-1], dim=-1)
             log_probs = torch.nn.functional.log_softmax(logits[0, :-1], dim=-1)
             token_log_probs = log_probs.gather(dim=-1, index=inputs).squeeze(-1)
-            # print(f"token_log_probs = {token_log_probs}")
             print(token_log_probs.shape)
             mu = (probs * log_probs).sum(-1)
-            # print(f"mu = {mu}")
-            # print(mu.shape)
             sigma = (probs * torch.square(log_probs)).sum(-1) - torch.square(mu)
-            # print(f"sigma = {sigma}")
-            print(sigma.shape)
             mink_plus = (token_log_probs - mu) / sigma.sqrt()
             k_length = int(len(mink_plus) * self.mink_plus_plus_ratio)
             topk = np.sort(mink_plus.cpu())[:k_length]
