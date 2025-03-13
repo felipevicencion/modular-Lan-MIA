@@ -138,12 +138,12 @@ def recall_get_all_prob(input_ids, loss, logits):
     prob = torch.exp(-loss).item()
     return prob, ll , ppl, all_prob, loss.item()
 
-def get_ll(sentence, model, tokenizer, device):
+def get_ll(input_ids, model):
     """
     Calculates the log-likelihood, probabilities, and perplexity for a given sentence.
 
     Parameters:
-        sentence (str): The input sentence for which to compute metrics.
+        inputs (torch.tensor): The input sequence for which to compute the metrics.
         model: The pre-trained language model.
         tokenizer: Tokenizer associated with the model.
         device: The device (CPU/GPU) for computation.
@@ -151,12 +151,31 @@ def get_ll(sentence, model, tokenizer, device):
     Returns:
         tuple: See `recall_get_all_prob` for details.
     """
-    input_ids = torch.tensor(tokenizer.encode(sentence)).unsqueeze(0)
-    input_ids = input_ids.to(device)
     with torch.no_grad():
         outputs = model(input_ids, labels=input_ids)
     loss, logits = outputs[:2]
     return recall_get_all_prob(input_ids, loss, logits)
+
+
+# def get_ll(sentence, model, tokenizer, device):
+#     """
+#     Calculates the log-likelihood, probabilities, and perplexity for a given sentence.
+
+#     Parameters:
+#         sentence (str): The input sentence for which to compute metrics.
+#         model: The pre-trained language model.
+#         tokenizer: Tokenizer associated with the model.
+#         device: The device (CPU/GPU) for computation.
+
+#     Returns:
+#         tuple: See `recall_get_all_prob` for details.
+#     """
+#     input_ids = torch.tensor(tokenizer.encode(sentence)).unsqueeze(0)
+#     input_ids = input_ids.to(device)
+#     with torch.no_grad():
+#         outputs = model(input_ids, labels=input_ids)
+#     loss, logits = outputs[:2]
+#     return recall_get_all_prob(input_ids, loss, logits)
 
 def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device):
     """
@@ -202,8 +221,8 @@ def tokenize_data(tokenizer, data, max_sequence_length):
 
     tokenize_data = lambda batch: tokenizer(batch['text'], max_length=max_sequence_length, padding=True, truncation=True)
     data = data.map(tokenize_data, batched=True, batch_size=len(data))
-    data = data.remove_columns(['text'])
-    data.set_format('torch', columns=['input_ids', 'attention_mask', 'label'])
+    # data = data.remove_columns(['text']) # some of the attacks need access to original text
+    data.set_format('torch', columns=['input_ids', 'attention_mask', 'label', 'text'])
     return data
 
 

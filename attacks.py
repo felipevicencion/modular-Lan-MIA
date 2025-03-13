@@ -30,7 +30,7 @@ class Attack:
             attack_args, _ = attack_options_parser.parse_known_args(input_args)
             self.attack_name = attack_args.attack_name
             self.num_trials = attack_args.num_trials
-            print(attack_args.score_thr)
+            # print(attack_args.score_thr)
             self.score_thr = parse_thresholds(str(attack_args.score_thr))
             self.num_score_thr = attack_args.num_score_thr
             self.max_sequence_length = attack_args.max_sequence_length
@@ -360,11 +360,15 @@ class ThresholdAttack(MetricAttack):
             closest_index = min(range(len(fprs)), key=lambda i: abs(fprs[i] - target_fpr))
             return fprs[closest_index], tprs[closest_index]
 
-        # Find FPR and TPR at FPR closest to 0.001 and 0.000001
+        # Find FPR and TPR at FPR closest to 0.05, 0.01, 0.001 and 0.000001
+        fpr_at_0_05, tpr_at_fpr_0_05 = find_fpr_tpr_at_target(0.05, all_fprs, all_tprs)
+        fpr_at_0_01, tpr_at_fpr_0_01 = find_fpr_tpr_at_target(0.01, all_fprs, all_tprs)
         fpr_at_0_001, tpr_at_fpr_0_001 = find_fpr_tpr_at_target(0.001, all_fprs, all_tprs)
         fpr_at_0_000001, tpr_at_fpr_0_000001 = find_fpr_tpr_at_target(0.000001, all_fprs, all_tprs)
-        print(f"At FPR closest to 0.001: FPR = {fpr_at_0_001:.6f}, TPR = {tpr_at_fpr_0_001:.6f}")
-        print(f"At FPR closest to 0.000001: FPR = {fpr_at_0_000001:.6f}, TPR = {tpr_at_fpr_0_000001:.6f}")
+        print(f"At FPR closest to 0.05: FPR = {fpr_at_0_05:.9f}, TPR = {tpr_at_fpr_0_05:.9f}")
+        print(f"At FPR closest to 0.01: FPR = {fpr_at_0_01:.9f}, TPR = {tpr_at_fpr_0_01:.9f}")
+        print(f"At FPR closest to 0.001: FPR = {fpr_at_0_001:.9f}, TPR = {tpr_at_fpr_0_001:.9f}")
+        print(f"At FPR closest to 0.000001: FPR = {fpr_at_0_000001:.9f}, TPR = {tpr_at_fpr_0_000001:.9f}")
 
         all_f1_scores = [metrics[key]["F1 Score"] for key in metrics]
         all_accuracies = [metrics[key]["Accuracy"] for key in metrics]
