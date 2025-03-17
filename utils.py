@@ -73,44 +73,7 @@ def fix_seed(seed: int = 0):
     np.random.seed(seed)
     set_seed(seed)
 
-# helper function for the recall attack
-def recall_process_prefix(max_length, prefix, avg_length, pass_window, total_shots, tokenizer):
-    """
-    Processes the prefix for a recall attack 
-
-    Parameters:
-        max_length (int): Maximum allowed token length for the sequence.
-        prefix (list): A list of prefix shots
-        avg_length (int): Average target length for the sequence.
-        pass_window (bool): Whether to bypass truncation and use the full prefix.
-        total_shots (int): Total number of shots to include in the prefix.
-        tokenizer: Tokenizer used to encode the text.
-
-    Returns:
-        list: The processed prefix, truncated if necessary to fit within the max token length.
-    """
-    if pass_window:
-        return prefix
-    token_counts = [len(tokenizer.encode(shot)) for shot in prefix]
-    target_token_count = avg_length
-    total_tokens = sum(token_counts) + target_token_count
-    if total_tokens <= max_length:
-        return prefix
-    # Determine the maximum number of shots that can fit within the max_length
-    max_shots = 0
-    cumulative_tokens = target_token_count
-    for count in token_counts:
-        if cumulative_tokens + count <= max_length:
-            max_shots += 1
-            cumulative_tokens += count
-        else:
-            break
-    # Truncate the prefix to include only the maximum number of shots
-    truncated_prefix = prefix[-max_shots:]
-    total_shots = max_shots
-    return truncated_prefix
-
-def recall_get_all_prob(input_ids, loss, logits):
+def get_all_prob(input_ids, loss, logits):
     """
     Calculates various probabilities, log-likelihoods, and perplexities based on the model's outputs.
 
@@ -149,58 +112,12 @@ def get_ll(input_ids, model):
         device: The device (CPU/GPU) for computation.
 
     Returns:
-        tuple: See `recall_get_all_prob` for details.
+        tuple: See `get_all_prob` for details.
     """
     with torch.no_grad():
         outputs = model(input_ids, labels=input_ids)
     loss, logits = outputs[:2]
-    return recall_get_all_prob(input_ids, loss, logits)
-
-
-# def get_ll(sentence, model, tokenizer, device):
-#     """
-#     Calculates the log-likelihood, probabilities, and perplexity for a given sentence.
-
-#     Parameters:
-#         sentence (str): The input sentence for which to compute metrics.
-#         model: The pre-trained language model.
-#         tokenizer: Tokenizer associated with the model.
-#         device: The device (CPU/GPU) for computation.
-
-#     Returns:
-#         tuple: See `recall_get_all_prob` for details.
-#     """
-#     input_ids = torch.tensor(tokenizer.encode(sentence)).unsqueeze(0)
-#     input_ids = input_ids.to(device)
-#     with torch.no_grad():
-#         outputs = model(input_ids, labels=input_ids)
-#     loss, logits = outputs[:2]
-#     return recall_get_all_prob(input_ids, loss, logits)
-
-def recall_get_conditional_ll(input_text, target_text, model, tokenizer, device):
-    """
-    Calculates conditional log-likelihood, probabilities, and perplexity for a target text
-    conditioned on the prefix.
-
-    Parameters:
-        input_text (str): The input context text.
-        target_text (str): The target text for which to compute metrics.
-        model: The pre-trained language model.
-        tokenizer: Tokenizer associated with the model.
-        device: The device (CPU/GPU) for computation.
-
-    Returns:
-        tuple: See `recall_get_all_prob` for details.
-    """
-    input_encodings = tokenizer(input_text, return_tensors="pt")
-    target_encodings = tokenizer(target_text, return_tensors="pt")
-    concat_ids = torch.cat((input_encodings.input_ids.to(device), target_encodings.input_ids.to(device)), dim=1)
-    labels = concat_ids.clone()
-    labels[:, : input_encodings.input_ids.size(1)] = -100
-    with torch.no_grad():
-        outputs = model(concat_ids, labels=labels)
-    loss, logits = outputs[:2]
-    return recall_get_all_prob(labels, loss, logits)
+    return get_all_prob(input_ids, loss, logits)
 
 # function to tokenize train and test data
 def tokenize_data(tokenizer, data, max_sequence_length):
@@ -224,7 +141,6 @@ def tokenize_data(tokenizer, data, max_sequence_length):
     # data = data.remove_columns(['text']) # some of the attacks need access to original text
     data.set_format('torch', columns=['input_ids', 'attention_mask', 'label', 'text'])
     return data
-
 
 def capitalize_after_underscore(input_string):
     """

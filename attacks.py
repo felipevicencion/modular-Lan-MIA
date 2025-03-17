@@ -174,8 +174,8 @@ class Attack:
         start_time_perform_attack = time.time()
         self.run_attack(attack_dataset, self.membership_true, attack_options)
         end_time_perform_attack = time.time()
-        elapsed_time = end_time_perform_attack - start_time_perform_attack
-        print(f"Attack completed in {elapsed_time:.4f} seconds.")
+        self.elapsed_time = end_time_perform_attack - start_time_perform_attack
+        print(f"Attack completed in {self.elapsed_time:.4f} seconds.")
         self.mia_metrics = self.calculate_mia_metrics(self.membership_true, self.membership_pred)
         mia_metrics_output_path = f"{self.output_dir}/{self.output_name}_mia_metrics.json"
         with open(mia_metrics_output_path, "w") as json_file:
@@ -381,5 +381,26 @@ class ThresholdAttack(MetricAttack):
         print(f"Maximum F1 Score: {max_f1:.4f}")
         print(f"Maximum Accuracy: {max_accuracy:.4f}")
         print(f"Maximum Advantage: {max_adv:.4f}")
+
+        # Store results in a JSON file ending with _sumstats.json
+        mia_metrics_sumstats_fpath = f"{self.output_dir}/{self.output_name}_sumstats.json"
+
+        summary_data = {
+            "elapsed_time": self.elapsed_time,
+            "best_f1_score": max_f1,
+            "best_accuracy": max_accuracy,
+            "best_advantage": max_adv,
+            "tpr_at_fpr": {
+                "0.05": tpr_at_fpr_0_05,
+                "0.01": tpr_at_fpr_0_01,
+                "0.001": tpr_at_fpr_0_001,
+                "0.000001": tpr_at_fpr_0_000001
+            }
+        }
+
+        with open(mia_metrics_sumstats_fpath, "w") as json_file:
+            json.dump(summary_data, json_file, indent=4)
+
+        print(f"Metrics saved to {mia_metrics_sumstats_fpath}")
 
         return metrics
