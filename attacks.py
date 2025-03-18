@@ -383,7 +383,7 @@ class ThresholdAttack(MetricAttack):
         print(f"Maximum Advantage: {max_adv:.4f}")
 
         # Store results in a JSON file ending with _sumstats.json
-        mia_metrics_sumstats_fpath = f"{self.output_dir}/{self.output_name}_sumstats.json"
+        mia_metrics_sumstats_fpath = f"{self.output_dir}/{self.output_name}.sumstats.json"
 
         summary_data = {
             "elapsed_time": self.elapsed_time,

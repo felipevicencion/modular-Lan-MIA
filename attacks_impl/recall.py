@@ -27,16 +27,6 @@ class AttackRecall(ThresholdAttack):
         return f"Generate a gramatically correct passage that is similar to the given text in length, domain, and style: {example}"
 
     # def get_completion(self, prompt):
-    #     message = [{"role": "user", "content": prompt}]
-    #     responses = openai.ChatCompletion.create(
-    #         model="gpt-4o",
-    #         messages=message,
-    #         max_tokens=1024,
-    #         temperature=1
-    #     )
-    #     return responses.choices[0]["message"]["content"]
-
-    # def get_completion(self, prompt):
     #     model = transformers.GPT2LMHeadModel.from_pretrained("gpt2")
     #     tokenizer = transformers.GPT2Tokenizer.from_pretrained("gpt2")
     #     inputs = tokenizer.encode(prompt, return_tensors="pt")

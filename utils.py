@@ -99,7 +99,7 @@ def get_all_prob(input_ids, loss, logits):
     ll = -loss.item()  # log-likelihood
     ppl = torch.exp(loss).item()
     prob = torch.exp(-loss).item()
-    return prob, ll , ppl, all_prob, loss.item()
+    return prob, ll, ppl, all_prob, loss.item()
 
 def get_ll(input_ids, model):
     """
