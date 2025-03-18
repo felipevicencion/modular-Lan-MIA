@@ -36,14 +36,38 @@ class AttackRecall(ThresholdAttack):
     #     )
     #     return responses.choices[0]["message"]["content"]
 
+    # def get_completion(self, prompt):
+    #     model = transformers.GPT2LMHeadModel.from_pretrained("gpt2")
+    #     tokenizer = transformers.GPT2Tokenizer.from_pretrained("gpt2")
+    #     inputs = tokenizer.encode(prompt, return_tensors="pt")
+    #     attention_mask = torch.ones(inputs.shape, dtype=torch.long)
+    #     outputs = model.generate(inputs, max_length=200, attention_mask=attention_mask, temperature=0.3, num_return_sequences=1, do_sample=True, pad_token_id=tokenizer.eos_token_id, no_repeat_ngram_size=2)
+    #     generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    #     response = generated_text[len(prompt):]
+    #     response = re.sub(r'[^A-Za-z0-9\s!?.,]', '', response)
+    #     response = response.replace("\n", " ").replace("\r", " ")
+    #     return response
+
     def get_completion(self, prompt):
-        model = transformers.GPT2LMHeadModel.from_pretrained("gpt2")
-        tokenizer = transformers.GPT2Tokenizer.from_pretrained("gpt2")
+        model_name = "EleutherAI/gpt-neo-2.7B"  # Or "EleutherAI/gpt-j-6B"
+        model = transformers.GPTNeoForCausalLM.from_pretrained(model_name)
+        tokenizer = transformers.GPT2Tokenizer.from_pretrained(model_name)
         inputs = tokenizer.encode(prompt, return_tensors="pt")
-        outputs = model.generate(inputs, max_length=150, temperature=0.7, num_return_sequences=1, do_sample=True, pad_token_id=tokenizer.eos_token_id, no_repeat_ngram_size=2)
+        attention_mask = torch.ones(inputs.shape, dtype=torch.long)
+        outputs = model.generate(
+            inputs, 
+            max_length=self.max_length // 2, 
+            attention_mask=attention_mask,
+            temperature=0.3, 
+            num_return_sequences=1, 
+            do_sample=True, 
+            pad_token_id=tokenizer.eos_token_id, 
+            no_repeat_ngram_size=2
+        )
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        response = generated_text[len(prompt):]
-        response = re.sub(r'[^A-Za-z0-9\s!?.,]', '', response) 
+        response = generated_text[len(prompt)+2:]
+        response = re.sub(r'[^A-Za-z0-9\s!?.,]', '', response)
+        response = response.replace("\n", " ").replace("\r", " ")
         return response
 
     def gpt_synthetic_prefix(self, original_prefixes):
