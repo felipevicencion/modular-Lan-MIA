@@ -9,6 +9,7 @@ from dataset import *
 import argparse
 import os 
 import json
+import opacus
 
 class PretrainedModels:
 
@@ -28,7 +29,11 @@ class PretrainedModels:
         model_options_parser.add_argument("-weight_decay", "--weight-decay", type=float, help = "Weight decay parameter used in fine-tunning", default = 0.01)
         model_options_parser.add_argument("-warmup_ratio", "--warmup-ratio", type=float, help = "Warmup ratio parameter used in fine-tunning", default = 0.1)
         model_options_parser.add_argument("-num_classes", "--num-classes", type=int, help = "Number of classes for the classification task", default = 2)
-     
+        model_options_parser.add_argument("-private_learning", "--private-learning", action="store_true", help = "indicator whether to use DP private learning during fine-tunning")
+        model_options_parser.add_argument("-opacus_target_epsilon", "--opacus-target-epsilon", type=float, help = "opacus private training: target_epsilon parameter", default = 3.0)
+        model_options_parser.add_argument("-opacus_target_delta", "--opacus-target-delta", type=float, help = "opacus private training: target_delta parameter", default = 1e-5)
+        model_options_parser.add_argument("-opacus_max_grad_norm", "--opacus-max-grad-norm", type=float, help = "opacus private training: max_grad_norm parameter", default = 1.0)
+
         model_args, _ = model_options_parser.parse_known_args(input_args)
         self.model_name = model_args.model_name
         self.max_sequence_length = model_args.max_sequence_length
@@ -45,6 +50,10 @@ class PretrainedModels:
         self.warmup_ratio = model_args.warmup_ratio
         # self.val_size = model_args.val_size
         self.num_classes = model_args.num_classes
+        self.private_learning = model_args.private_learning
+        self.opacus_target_epsilon = model_args.opacus_target_epsilon
+        self.opacus_target_delta = model_args.opacus_target_delta
+        self.opacus_max_grad_norm = model_args.opacus_max_grad_norm
         # self.model_name = model_options['model_name']
         # self.max_sequence_length = model_options['max_sequence_length']
         # self.output_dir = model_options['output_dir']
@@ -238,6 +247,25 @@ class PretrainedModels:
             eval_dataset=val_data
         )
 
+        # Enable Private Training if self.privacy_training is True
+        if self.private_learning:
+            print("..enabling Private Training with Opacus")
+
+            # Wrap the optimizer
+            optimizer = self.trainer.create_optimizer()
+            
+            # Attach Opacus' Privacy Engine
+            privacy_engine = opacus.PrivacyEngine()
+            self.model, optimizer, train_data = privacy_engine.make_private_with_epsilon(
+                module=self.model,
+                optimizer=optimizer,
+                data_loader=train_data,
+                target_epsilon=self.opacus_target_epsilon,  # Privacy budget: smaller is stronger privacy
+                target_delta=self.opacus_target_delta,
+                max_grad_norm=self.opacus_max_grad_norm 
+            )
+
+        print(f"..private training parameters: (ε = {privacy_engine.get_epsilon(delta=1e-5)})")
         print(f"device = {training_args.device}")
 
         self.trainer.train()
