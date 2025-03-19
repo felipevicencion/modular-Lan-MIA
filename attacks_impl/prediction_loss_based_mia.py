@@ -20,8 +20,10 @@ class AttackPredictionLossBasedMia(ThresholdAttack):
             train_loss_result = trainer.evaluate(eval_dataset=trainer.train_dataset)
             self.score_thr = train_loss_result.get("eval_loss", None)
     
-        predictions = trainer.predict(attack_dataset)
-    
+        # predictions = trainer.predict(attack_dataset)
+        with torch.no_grad():
+            predictions = trainer.predict(attack_dataset)
+
         # makes sense for classification tasks only
         logits = predictions.predictions
         labels = predictions.label_ids

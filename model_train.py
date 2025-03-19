@@ -24,7 +24,7 @@ class PretrainedModels:
         model_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
         model_options_parser.add_argument("-num_epochs", "--num-epochs", type=int, help = "Number of epochs used in the fine-tuning of the model", default = 5)
         model_options_parser.add_argument("-per_device_train_batch_size", "--per-device-train-batch-size", type=int, help = "Per device train batch size", default = 16)
-        model_options_parser.add_argument("-per_device_eval_batch_size", "--per-device-eval-batch-size", type=int, help = "Per device eval batch size", default = 16)
+        model_options_parser.add_argument("-per_device_eval_batch_size", "--per-device-eval-batch-size", type=int, help = "Per device eval batch size", default = 8)
         model_options_parser.add_argument("-learning_rate", "--learning-rate", type=float, help = "Learning rate used in fine-tunning", default = 2e-5)
         model_options_parser.add_argument("-weight_decay", "--weight-decay", type=float, help = "Weight decay parameter used in fine-tunning", default = 0.01)
         model_options_parser.add_argument("-warmup_ratio", "--warmup-ratio", type=float, help = "Warmup ratio parameter used in fine-tunning", default = 0.1)

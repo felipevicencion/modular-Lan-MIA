@@ -93,6 +93,20 @@ class Attack:
             "TPR": tpr,
             "Adv": adv
         }
+
+        # Store results in a JSON file ending with _sumstats.json
+        mia_metrics_sumstats_fpath = f"{self.output_dir}/{self.output_name}.sumstats.json"
+        summary_data = {
+            "elapsed_time": self.elapsed_time,
+            "best_f1_score": metrics["F1 Score"],
+            "best_accuracy": metrics["Accuracy"],
+            "best_advantage": metrics["Adv"]
+        }
+
+        with open(mia_metrics_sumstats_fpath, "w") as json_file:
+            json.dump(summary_data, json_file, indent=4)
+
+        print(f"Sumstats saved to {mia_metrics_sumstats_fpath}")
         return metrics
 
     def print_mia_metrics(self):
@@ -401,6 +415,6 @@ class ThresholdAttack(MetricAttack):
         with open(mia_metrics_sumstats_fpath, "w") as json_file:
             json.dump(summary_data, json_file, indent=4)
 
-        print(f"Metrics saved to {mia_metrics_sumstats_fpath}")
+        print(f"Sumstats saved to {mia_metrics_sumstats_fpath}")
 
         return metrics
