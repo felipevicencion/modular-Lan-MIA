@@ -29,7 +29,7 @@ task = args.task
 wdataset = Dataset(all_args)
 if task == 'classification':    
     wdataset.train_test_val_split()
-elif task == 'generative':
+elif task == 'causal':
     wdataset.load_dataset()
 
 if run_mode == 'fine-tunning':

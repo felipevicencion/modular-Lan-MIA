@@ -12,7 +12,7 @@ class Dataset:
             dataset_options_parser.add_argument("-use_data_percentage", "--use-data-percentage", type=int, help="Defining the percentage of the data to be used", default=100)
             dataset_options_parser.add_argument("-val_size", "--val-size", type=float, help = "Size of the validation set as ratio of the train set", default = 0.1)
             dataset_options_parser.add_argument("-split", "--split", type=str, help = "Refers to a subset of a dataset, used for different stages of model training and evaluation", default = "WikiMIA_length64")
-            # dataset_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
+            # dataset_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'causal'", default = "classification")
             dataset_args, _ = dataset_options_parser.parse_known_args(input_args)
             self.dataset_path = dataset_args.dataset_path
             self.dataset_name = dataset_args.dataset_name
@@ -43,11 +43,11 @@ class Dataset:
         def load_dataset(self):
 
             if self.dataset_name is not None and self.split is not None:
-                self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split = self.split)
+                self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split = self.split, trust_remote_code=True)
             elif self.dataset_name is None and self.split is not None:
-                self.data = datasets.load_dataset(path = self.dataset_path, split = self.split)
+                self.data = datasets.load_dataset(path = self.dataset_path, split = self.split, trust_remote_code=True)
             elif self.dataset_name is not None and self.split is None:
-                self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name)
+                self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, trust_remote_code=True)
             else:
                 self.data = datasets.load_dataset(self.dataset_path)
             self.data = self.data.rename_column("input", "text")

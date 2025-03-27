@@ -180,7 +180,7 @@ class Attack:
             attack_dataset = datasets.concatenate_datasets([shf_train_data, shf_test_data])
             self.membership_true = torch.cat((torch.ones(self.num_trials_per_cat), torch.zeros(self.num_trials_per_cat)))
 
-        elif attack_options['task'] == 'generative':
+        elif attack_options['task'] == 'causal':
             attack_dataset = tokenize_data(attack_options['tokenizer'], wdataset.data, self.max_sequence_length)
             # print(f"len(attack_dataset) = {len(attack_dataset)}")
             self.membership_true = attack_dataset['label']

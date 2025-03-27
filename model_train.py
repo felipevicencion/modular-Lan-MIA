@@ -21,7 +21,7 @@ class PretrainedModels:
         model_options_parser.add_argument("-output_dir", "--output-dir", type=str, help = "Location of the output directory", default = None)  
         model_options_parser.add_argument("-load_model_dir", "--load-model-dir", type=str, help = "Directory from which a trained model is loaded", default = None)
         model_options_parser.add_argument("-use_float16", "--use-float16", type=bool, help = "Whether or not to store weight in 16 bit floats", default = False)
-        model_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'generative'", default = "classification")
+        model_options_parser.add_argument("-task", "--task", type=str, help = "Describes the task which a model was trained for: 'classification' or 'causal'", default = "classification")
         model_options_parser.add_argument("-num_epochs", "--num-epochs", type=int, help = "Number of epochs used in the fine-tuning of the model", default = 5)
         model_options_parser.add_argument("-per_device_train_batch_size", "--per-device-train-batch-size", type=int, help = "Per device train batch size", default = 16)
         model_options_parser.add_argument("-per_device_eval_batch_size", "--per-device-eval-batch-size", type=int, help = "Per device eval batch size", default = 8)
@@ -54,15 +54,8 @@ class PretrainedModels:
         self.opacus_target_epsilon = model_args.opacus_target_epsilon
         self.opacus_target_delta = model_args.opacus_target_delta
         self.opacus_max_grad_norm = model_args.opacus_max_grad_norm
-        # self.model_name = model_options['model_name']
-        # self.max_sequence_length = model_options['max_sequence_length']
-        # self.output_dir = model_options['output_dir']
-        # self.log_dir = model_options['log_dir']
-        # self.load_model_dir = model_options['load_model_dir']
-        # self.use_float16 = model_options['use_float16']
-        # self.task = model_options['task']
         self.load_specific_model()
-        if self.task == 'generative':
+        if self.task == 'causal':
             self.model.eval()
         
     def load_specific_model(self):
@@ -70,7 +63,7 @@ class PretrainedModels:
         Load a specific model and tokenizer based on the task type and model name.
     
         Attributes Modified:
-            - self.model: The loaded model object, either for classification or generative tasks.
+            - self.model: The loaded model object, either for classification or causal tasks.
             - self.tokenizer: The corresponding tokenizer for the loaded model.
             
         Raises:
@@ -88,12 +81,11 @@ class PretrainedModels:
             except Exception as e:
                 print(f"Error: {e}")
                 print("Ensure you are using the correct directory or model name for loading the model.")
-
-        elif self.task == 'generative':
-            if "roberta" in self.model_name:
-                self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
-                self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
-            elif "mamba" in self.model_name:
+        elif self.task == 'causal':
+            # if "roberta" in self.model_name:
+            #     self.model = transformers.RobertaForSequenceClassification.from_pretrained(self.model_name)
+            #     self.tokenizer = transformers.RobertaTokenizerFast.from_pretrained(self.model_name, max_length = self.max_sequence_length)
+            if "mamba" in self.model_name:
                 self.model = transformers.MambaForCausalLM.from_pretrained(
                     self.model_name, return_dict=True, trust_remote_code=True,
                     torch_dtype=torch.float16 if self.use_float16 else torch.float32,
@@ -113,42 +105,6 @@ class PretrainedModels:
                 # inputs = self.tokenizer("Hello, square root of -4 is", return_tensors="pt")
                 # tokens = self.model.generate(**inputs, max_length=30, num_return_sequences=1)
                 # print(self.tokenizer.decode(tokens[0]))
-
-    # def prepare_model(self, wdataset):
-    #     """
-    #     Parameters:
-    #         wdataset: A dataset object 
-    #     Returns:
-    #         tuple: A tuple containing:
-    #                - trainer (transformers.Trainer): Configured Trainer object for model training.
-    #                - model: The prepared model.
-    #                - tokenizer: The corresponding tokenizer.
-    #     """
-    #     # fetch train and test data
-    #     train_data, test_data = wdataset.get_train_test()
-    #     if self.task == 'classification':
-    #         self.num_classes = len(set(train_data.to_pandas()["label"]))
-    #         self.model.config.num_labels = self.num_classes
-    #         print(f"..num_classes = {self.num_classes}")
-            
-    #     # splitting train set into validation set and exclusively train set
-    #     train_valid = train_data.train_test_split(test_size=self.val_size)
-    #     # train_data, test_data = tokenize_data(self.tokenizer, train_data, test_data, self.max_sequence_length)
-    #     test_data = tokenize_data(self.tokenizer, test_data, self.max_sequence_length)
-    #     val_data = train_valid["test"]
-    #     train_data = train_valid["train"]
-    #     train_data = tokenize_data(self.tokenizer, train_data, self.max_sequence_length)
-    #     val_data = tokenize_data(self.tokenizer, val_data, self.max_sequence_length)
-    #     wdataset.train_data = train_data
-    #     wdataset.test_data = test_data
-    #     wdataset.val_data = val_data
-    #     trainer = transformers.Trainer(
-    #         model=self.model,
-    #         compute_metrics=self.compute_metrics,
-    #         train_dataset=train_data,
-    #         eval_dataset=val_data
-    #     )
-    #     return trainer, self.model, self.tokenizer
     
     def compute_metrics(self, pred):
         """
@@ -201,13 +157,14 @@ class PretrainedModels:
         """
 
         # fetch train and test data
-        train_data, test_data = wdataset.get_train_test()
+        # train_data, test_data = wdataset.get_train_test()
         if idx_shadow is not None:
             train_data = wdataset.shadow_datasets[idx_shadow]
         
         # load model and tokenizer and define length of the text sequence, number of classes
-        self.model.config.num_labels = self.num_classes
-        print(f"..num_classes = {self.num_classes}")
+        if self.task == 'classification':
+            self.model.config.num_labels = self.num_classes
+            print(f"..num_classes = {self.num_classes}")
 
         # # splitting train set into validation set and exclusively train set
         # train_valid = train_data.train_test_split(test_size=self.val_size)
@@ -249,7 +206,7 @@ class PretrainedModels:
 
         # Enable Private Training if self.privacy_training is True
         if self.private_learning:
-            print("..enabling Private Training with Opacus")
+            print("..enabling private training with Opacus")
 
             # Wrap the optimizer
             optimizer = self.trainer.create_optimizer()
@@ -265,7 +222,6 @@ class PretrainedModels:
                 max_grad_norm=self.opacus_max_grad_norm 
             )
 
-        print(f"..private training parameters: (ε = {privacy_engine.get_epsilon(delta=1e-5)})")
         print(f"device = {training_args.device}")
 
         self.trainer.train()
@@ -280,7 +236,6 @@ class PretrainedModels:
     
         print("..metric evaluation on the test set")
         # self.trainer.evaluate(eval_dataset=test_data)
-
 
         # Create fine-tuning details object based on instance attributes
         fine_tuning_details = {
@@ -300,7 +255,11 @@ class PretrainedModels:
             "dataloader_num_workers": 1,
             "lr_scheduler_type": "linear",
             "learning_rate": self.learning_rate,
-            "disable_tqdm": True 
+            "disable_tqdm": True,
+            "private_learning": self.private_learning,
+            "opacus_target_epsilon": self.opacus_target_epsilon,
+            "opacus_target_delta": self.opacus_target_delta,
+            "opacus_max_grad_norm": self.opacus_max_grad_norm
         }
 
         # Define output file path for saving
