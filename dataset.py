@@ -41,16 +41,21 @@ class Dataset:
             return combined_dataset
 
         def load_dataset(self):
+            load_kwargs = {"path": self.dataset_path, "trust_remote_code": True}
+            if self.dataset_name is not None:
+                load_kwargs["name"] = self.dataset_name
+            if self.split is not None:
+                load_kwargs["split"] = self.split
 
-            if self.dataset_name is not None and self.split is not None:
-                self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split = self.split, trust_remote_code=True)
-            elif self.dataset_name is None and self.split is not None:
-                self.data = datasets.load_dataset(path = self.dataset_path, split = self.split, trust_remote_code=True)
-            elif self.dataset_name is not None and self.split is None:
-                self.data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, trust_remote_code=True)
-            else:
-                self.data = datasets.load_dataset(self.dataset_path)
-            self.data = self.data.rename_column("input", "text")
+            self.data = datasets.load_dataset(**load_kwargs)
+
+            #column renaming for causal tasts or standard text formatting
+            if hasattr(self, 'task') and self.task == 'causal':
+                for old_col in ["input", "content"]:
+                    if old_col in self.data.column_names and "text" not in self.data.column_names:
+                        self.data = self.data.rename_column(old_col, "text")
+                        break
+            
 
         def train_test_val_split(self):
             """
