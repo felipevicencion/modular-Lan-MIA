@@ -55,7 +55,8 @@ class Dataset:
                     if old_col in self.data.column_names and "text" not in self.data.column_names:
                         self.data = self.data.rename_column(old_col, "text")
                         break
-            
+
+            return
 
         def train_test_val_split(self):
             """
