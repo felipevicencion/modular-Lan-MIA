@@ -6,13 +6,15 @@ from attacks import *
 import spacy
 import numpy as np
 from pathlib import Path
+import re, string
 
+root_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(root_dir))
 from helpers.tnt_helpers import (
     bottom_k_entropy_words,
     create_line_to_top_words_map,
     create_entropy_map_func,
 )
-import re, string
 
 MAX_LEN_LINE_GENERATE = 40
 MIN_LEN_LINE_GENERATE = 7
