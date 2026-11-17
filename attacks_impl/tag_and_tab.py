@@ -8,22 +8,10 @@ import numpy as np
 from pathlib import Path
 import re, string
 
-# 1. Ensure project root is in sys.path (for base 'attacks' module)
-root_dir = Path(__file__).resolve().parent.parent
-if str(root_dir) not in sys.path:
-    sys.path.insert(0, str(root_dir))
-
-from attacks import *
-
-# 2. Add the helpers directory directly to sys.path to avoid package lookup errors
-helpers_dir = root_dir / "helpers"
-if str(helpers_dir) not in sys.path:
-    sys.path.insert(0, str(helpers_dir))
-
 from tnt_helpers import (
     bottom_k_entropy_words,
     create_line_to_top_words_map,
-    create
+    create_entropy_map_func,
 )
 
 MAX_LEN_LINE_GENERATE = 40
