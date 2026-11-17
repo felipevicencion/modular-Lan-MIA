@@ -8,7 +8,7 @@ import numpy as np
 from pathlib import Path
 import re, string
 
-from tnt_helpers import (
+from attacks_impl.tnt_helpers import (
     bottom_k_entropy_words,
     create_line_to_top_words_map,
     create_entropy_map_func,
