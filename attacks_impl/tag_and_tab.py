@@ -7,11 +7,10 @@ import spacy
 import numpy as np
 from pathlib import Path
 
-from helpers import (
+from helpers.tnt_helpers import (
     bottom_k_entropy_words,
     create_line_to_top_words_map,
     create_entropy_map_func,
-    load_entropy_map
 )
 import re, string
 
