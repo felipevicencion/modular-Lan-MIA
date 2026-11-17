@@ -10,6 +10,8 @@ import re, string
 
 root_dir = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(root_dir))
+
+from attacks_impl import *
 from helpers.tnt_helpers import (
     bottom_k_entropy_words,
     create_line_to_top_words_map,
