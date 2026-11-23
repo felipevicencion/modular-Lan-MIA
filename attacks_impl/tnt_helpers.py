@@ -93,7 +93,7 @@ def load_data_pile(mode, train_val_pile, num_samples=100000):
 #changed from tag&tabs implementation to use different datasets
 def create_entropy_map_func(dataset_identifier, mode="Dataset", train_val_pile="validation", split="train"):
     if mode == 'Dataset':
-        data_sources = [load_dataset(dataset_identifier, split)]
+        data_sources = [load_dataset(dataset_identifier, split=split)]
     elif mode == 'PILE':
         data_sources = load_data_pile('PILE', train_val_pile, num_samples=100000)
     print("Creating entropy map...")
