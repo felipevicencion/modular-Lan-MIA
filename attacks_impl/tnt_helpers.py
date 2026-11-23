@@ -16,7 +16,7 @@ def _normalize_token(w: str) -> str:
     return w
 
 
-def create_entropy_map(data_sources, dataset_identifier, split, mode='books'):
+def create_entropy_map(data_sources, dataset_identifier, split="train", mode='books'):
     """
     Build an entropy map over normalized word forms.
     For English sources, use wordfreq probability proxy p and set entropy = -p*log2(p).
