@@ -136,6 +136,10 @@ def tokenize_data(tokenizer, data, max_sequence_length):
     if all(col in data.column_names for col in ['input_ids', 'attention_mask']):
         return data  # Return as is if already tokenized
 
+    #update: pad token for causal tokenizers
+    if tokenizer.pad_token is None and tokenizer.eos_token is not None:
+        tokenizer.pad_token = tokenizer.eos_token
+
     #update, allowing snippet based datasets
     text_col = "text" if "text" in data.column_names else ("snippet" if "snippet" in data.column_names else None)
     if text_col is None:
@@ -143,7 +147,7 @@ def tokenize_data(tokenizer, data, max_sequence_length):
     
     map_fn = lambda batch: tokenizer(batch[text_col], max_length=max_sequence_length, padding=True, truncation=True)
     data = data.map(map_fn, batched=True, batch_size=len(data))
-    
+
     desired_cols = ['input_ids', 'attention_mask', 'label', text_col]
     existing_cols = [col for col in desired_cols if col in data.column_names]
     data.set_format('torch', columns=existing_cols)
