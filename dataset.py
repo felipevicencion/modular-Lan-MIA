@@ -76,10 +76,25 @@ class Dataset:
             """
 
             print(f"..loading dataset {self.dataset_path}")
+            #update: check available splits so single-split datasets
+            split_kwargs = {}
             if self.dataset_name is not None:
-                train_data, test_data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split =['train', 'test'])
+                split_kwargs["config_name"] = self.dataset_name
+            available_splits = datasets.get_dataset_split_names(self.dataset_path, **split_kwargs)
+
+            if "train" in available_splits and "test" in available_splits:
+                if self.dataset_name is not None:
+                    train_data, test_data = datasets.load_dataset(path = self.dataset_path, name = self.dataset_name, split =['train', 'test'])
+                else:
+                    train_data, test_data = datasets.load_dataset(self.dataset_path, split =['train', 'test'])
             else:
-                train_data, test_data = datasets.load_dataset(self.dataset_path, split =['train', 'test'])
+                base_split = "train" if "train" in available_splits else available_splits[0]
+                load_kwargs = {"path": self.dataset_path, "split": base_split}
+                if self.dataset_name is not None:
+                    load_kwargs["name"] = self.dataset_name
+                base_data = datasets.load_dataset(**load_kwargs)
+                split_ds = base_data.train_test_split(test_size=0.2, seed=42)
+                train_data, test_data = split_ds["train"], split_ds["test"]
             # subsetting train and test data to 'use_data_percentage'
             num_included_samples_train = int(len(train_data) * float(self.use_data_percentage) / 100)
             self.indices_train_val = torch.randperm(len(train_data))[:num_included_samples_train].tolist()
