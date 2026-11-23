@@ -30,7 +30,7 @@ class AttackTagAndTab(ThresholdAttack):
         sorted_words = sorted(words, key=len, reverse=True)
         return sorted_words[:self.k_keywords]
 
-    def getPerplexityScore(sentence, model, tokenizer, gpu):        
+    def getPerplexityScore(self, sentence, model, tokenizer, gpu):        
         input_ids = torch.tensor(tokenizer.encode(sentence)).unsqueeze(0).to(
             gpu).long()  # Ensure the tensor is of type Long
         with torch.no_grad():
@@ -47,10 +47,22 @@ class AttackTagAndTab(ThresholdAttack):
         return torch.exp(loss).item(), all_prob, logits, input_ids_processed
     
     #From Tag&tab's github
-    def compute_tag_scores(self, eval_dataset, trainer, entropy_map, nlp_spacy):
+    def compute_tag_scores(self, eval_dataset, trainer, entropy_map, nlp_spacy, wdataset=None):
         scores = []
         model = trainer.model
-        tokenizer = trainer.tokenizer
+        tokenizer = (
+            getattr(trainer, "processing_class", None)
+            or getattr(trainer, "tokenizer", None)
+            or getattr(wdataset, "tokenizer", None)
+        )
+        #tokenizer logging
+        tok_name = (
+            getattr(tokenizer, "name_or_path", None)
+            or getattr(getattr(tokenizer, "init_kwargs", {}), "get", lambda *_: None)("name_or_path")
+            or "unknown"
+        )
+        print(f"[tag_and_tab] Using tokenizer: {type(tokenizer).__name__} ({tok_name})")
+
         model.eval()
 
         for item in eval_dataset:
@@ -137,7 +149,7 @@ class AttackTagAndTab(ThresholdAttack):
         print(f"Generating or fetching entropy map for: {dataset_identifier}...")
 
         #Get or load the entropy map
-        entropy_map = create_entropy_map_func(dataset_identifier, "Dataset")
+        entropy_map = create_entropy_map_func(dataset_identifier, "Dataset", "validation")
 
         try:
             nlp_spacy = spacy.load("en_core_web_sm")
@@ -146,7 +158,7 @@ class AttackTagAndTab(ThresholdAttack):
             os.system("python -m spacy download en_core_web_sm")
             nlp_spacy = spacy.load("en_core_web_sm")
 
-        scores = self.compute_tag_scores(attack_dataset, trainer, entropy_map, nlp_spacy)
+        scores = self.compute_tag_scores(attack_dataset, trainer, entropy_map, nlp_spacy, wdataset)
         self.membership_pred = self.thresholds_comp(scores, self.score_thr)
         self.plot_roc_curves(
             self.membership_pred,
