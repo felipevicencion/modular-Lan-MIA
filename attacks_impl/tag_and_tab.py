@@ -24,6 +24,16 @@ class AttackTagAndTab(ThresholdAttack):
         super().__init__(input_args)
         self.k_keywords = k_keywords
 
+        tnt_parser = argparse.ArgumentParser(description="Tag&Tab options parser")
+        tnt_parser.add_argument(
+            "-split", "--split",
+            type=str,
+            default="train",
+            help="Dataset split to use (e.g., train, WikiMIA_length64)",
+        )
+        tnt_args, _ = tnt_parser.parse_known_args(input_args)
+        self.split = tnt_args.split
+
     def select_keywords(self, text):
         words = text.split()
         if len(words) <= self.k_keywords:
@@ -132,13 +142,13 @@ class AttackTagAndTab(ThresholdAttack):
     def run_attack(self, attack_dataset, membership_true, attack_options):
         trainer = attack_options['trainer']
         wdataset = attack_options['wdataset']
-        split = attack_options['split']
-        
+        split = attack_options.get("split") or self.split
+
         dataset_identifier = wdataset.dataset_name if wdataset.dataset_name is not None else wdataset.dataset_path
         print(f"Generating or fetching entropy map for: {dataset_identifier}...")
 
         #Get or load the entropy map
-        entropy_map = create_entropy_map_func(dataset_identifier, "Dataset", "validation", split)
+        entropy_map = create_entropy_map_func(dataset_identifier, "Dataset", "validation", split=split)
 
         try:
             nlp_spacy = spacy.load("en_core_web_sm")

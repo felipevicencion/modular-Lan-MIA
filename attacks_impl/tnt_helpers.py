@@ -37,9 +37,15 @@ def create_entropy_map(data_sources, dataset_identifier, split="train", mode='bo
     elif mode == 'Dataset':
         print(f"Started processing for mode: {mode}")
         source = dataset_identifier if dataset_identifier is not None else data_sources
-        db_data = load_dataset(source, split="train") if isinstance(source, str) else source
+        db_data = load_dataset(source, split=split) if isinstance(source, str) else source
         for item in db_data:
-            text = item.get('text') if 'text' in item else item.get('snippet', '')
+            text = (
+                item.get('text')
+                if 'text' in item
+                else item.get('snippet')
+                if 'snippet' in item
+                else item.get('input', '')
+            )
             add_text(text)
     else:
         # fallback: assume iterable of dicts with 'text'
@@ -91,7 +97,7 @@ def create_entropy_map_func(dataset_identifier, mode="Dataset", train_val_pile="
     elif mode == 'PILE':
         data_sources = load_data_pile('PILE', train_val_pile, num_samples=100000)
     print("Creating entropy map...")
-    entropy_map = create_entropy_map(data_sources, dataset_identifier, mode=mode)
+    entropy_map = create_entropy_map(data_sources, dataset_identifier, split=split, mode=mode)
 
     filename = "entropy_map.txt"
     print(f"Saving entropy map to {filename}...")
