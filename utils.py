@@ -120,7 +120,52 @@ def get_ll(input_ids, model):
     return get_all_prob(input_ids, loss, logits)
 
 # function to tokenize train and test data
-def tokenize_data(tokenizer, data, max_sequence_length):
+def _resolve_text_column(data, text_column=None):
+    if text_column is not None:
+        if text_column not in data.column_names:
+            raise KeyError(
+                f"Requested column '{text_column}' not in dataset columns: {data.column_names}"
+            )
+        return text_column
+
+    candidates = (
+        "text",
+        "snippet",
+        "input",
+        "content",
+        "passage",
+        "document",
+        "context",
+        "query",
+        "prompt",
+    )
+    for col in candidates:
+        if col in data.column_names:
+            return col
+
+    excluded = {
+        "label",
+        "labels",
+        "input_ids",
+        "attention_mask",
+        "token_type_ids",
+        "index",
+        "id",
+    }
+    remaining = [c for c in data.column_names if c not in excluded]
+    if not remaining:
+        raise KeyError(
+            f"Could not infer a text column from dataset columns: {data.column_names}"
+        )
+
+    for col in remaining:
+        if isinstance(data[0][col], str):
+            return col
+
+    return remaining[0]
+
+
+def tokenize_data(tokenizer, data, max_sequence_length, text_column=None):
     """
     Tokenizes the dataset only if it has not been tokenized.
 
@@ -128,29 +173,27 @@ def tokenize_data(tokenizer, data, max_sequence_length):
         tokenizer: Tokenizer to convert text into input IDs, attention masks, etc.
         data: Dataset to be tokenized.
         max_sequence_length (int): Maximum token length for truncation and padding.
+        text_column (str, optional): Explicit text column name to tokenize.
 
     Returns:
         Dataset: Tokenized dataset.
     """
-    # Check if dataset is already tokenized
-    if all(col in data.column_names for col in ['input_ids', 'attention_mask']):
-        return data  # Return as is if already tokenized
+    if all(col in data.column_names for col in ["input_ids", "attention_mask"]):
+        return data
 
-    #update: pad token for causal tokenizers
-    if tokenizer.pad_token is None and tokenizer.eos_token is not None:
-        tokenizer.pad_token = tokenizer.eos_token
+    text_col = _resolve_text_column(data, text_column=text_column)
 
-    #update, allowing snippet based datasets
-    text_col = "text" if "text" in data.column_names else ("snippet" if "snippet" in data.column_names else None)
-    if text_col is None:
-        raise KeyError(f"Expected 'text' or 'snippet' in dataset columns, got: {data.column_names}")
-    
-    map_fn = lambda batch: tokenizer(batch[text_col], max_length=max_sequence_length, padding=True, truncation=True)
-    data = data.map(map_fn, batched=True, batch_size=len(data))
+    tokenize_fn = lambda batch: tokenizer(
+        batch[text_col],
+        max_length=max_sequence_length,
+        padding=True,
+        truncation=True,
+    )
+    data = data.map(tokenize_fn, batched=True, batch_size=len(data))
 
-    desired_cols = ['input_ids', 'attention_mask', 'label', text_col]
-    existing_cols = [col for col in desired_cols if col in data.column_names]
-    data.set_format('torch', columns=existing_cols)
+    format_cols = ["input_ids", "attention_mask", "label", text_col]
+    available_cols = [c for c in format_cols if c in data.column_names]
+    data.set_format("torch", columns=available_cols)
     return data
 
 def capitalize_after_underscore(input_string):
