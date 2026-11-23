@@ -137,7 +137,7 @@ class AttackTagAndTab(ThresholdAttack):
         print(f"Generating or fetching entropy map for: {dataset_identifier}...")
 
         #Get or load the entropy map
-        entropy_map = create_entropy_map_func(dataset_identifier)
+        entropy_map = create_entropy_map_func(dataset_identifier, "Dataset")
 
         try:
             nlp_spacy = spacy.load("en_core_web_sm")

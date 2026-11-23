@@ -34,9 +34,9 @@ def create_entropy_map(data_sources, mode='books'):
         # data_sources is a (possibly streaming) iterable of dicts with 'text'
         for item in data_sources:
             add_text(item['text'])
-    elif mode == 'BookMIA':
+    elif mode == 'Dataset':
         print(f"Started processing for mode: {mode}")
-        db_data = load_dataset("swj0419/BookMIA", split="train")
+        db_data = load_dataset(data_sources, split="train")
         for item in db_data:
             add_text(item['snippet'])
     else:
@@ -75,17 +75,17 @@ def sort_entropy_map(entropy_map, descending=True):
 def get_text_files(folder_path):
     return [str(filepath) for filepath in Path(folder_path).rglob('*.txt')]
 
-
 def load_data_pile(mode, train_val_pile, num_samples=100000):
     if mode == 'PILE':
         data_sources = load_dataset("monology/pile-uncopyrighted", split=train_val_pile, streaming=True)
         if num_samples:
             data_sources = data_sources.take(num_samples)
         return data_sources
-
-def create_entropy_map_func(mode="BookMIA", train_val_pile="validation"):
-    if mode == 'BookMIA':
-        data_sources = [load_dataset("swj0419/BookMIA", split=f"train")]
+    
+#changed from tag&tabs implementation to use different datasets
+def create_entropy_map_func(dataset_identifier, mode="Dataset", train_val_pile="validation"):
+    if mode == 'Dataset':
+        data_sources = [load_dataset(dataset_identifier, split=f"train")]
     elif mode == 'PILE':
         data_sources = load_data_pile('PILE', train_val_pile, num_samples=100000)
     print("Creating entropy map...")
