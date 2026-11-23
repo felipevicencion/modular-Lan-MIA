@@ -7,6 +7,7 @@ import spacy
 import numpy as np
 from pathlib import Path
 import re, string
+from transformers import AutoTokenizer
 
 from attacks_impl.tnt_helpers import (
     bottom_k_entropy_words,
@@ -47,7 +48,7 @@ class AttackTagAndTab(ThresholdAttack):
         return torch.exp(loss).item(), all_prob, logits, input_ids_processed
     
     #From Tag&tab's github
-    def compute_tag_scores(self, eval_dataset, trainer, entropy_map, nlp_spacy, wdataset=None):
+    def compute_tag_scores(self, eval_dataset, trainer, entropy_map, nlp_spacy, tokenizer):
         scores = []
         model = trainer.model
         tokenizer = (
@@ -66,7 +67,6 @@ class AttackTagAndTab(ThresholdAttack):
         model.eval()
 
         for item in eval_dataset:
-
             if "input_ids" in item:
                 text = trainer.tokenizer.decode(item["input_ids"], skip_special_tokens=True)
             else:
@@ -158,7 +158,20 @@ class AttackTagAndTab(ThresholdAttack):
             os.system("python -m spacy download en_core_web_sm")
             nlp_spacy = spacy.load("en_core_web_sm")
 
-        scores = self.compute_tag_scores(attack_dataset, trainer, entropy_map, nlp_spacy, wdataset)
+        tokenizer = (
+                    getattr(trainer, "processing_class", None)
+                    or getattr(trainer, "tokenizer", None)
+                    or getattr(wdataset, "tokenizer", None)
+                )
+        if tokenizer is None:
+            model_name = (
+                getattr(wdataset, "tokenizer_name", None)
+                or getattr(trainer.model.config, "_name_or_path", None)
+                or "roberta-base"
+            )
+            tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+        scores = self.compute_tag_scores(attack_dataset, trainer, entropy_map, nlp_spacy, tokenizer=tokenizer)
         self.membership_pred = self.thresholds_comp(scores, self.score_thr)
         self.plot_roc_curves(
             self.membership_pred,
