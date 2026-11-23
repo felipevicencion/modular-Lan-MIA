@@ -16,7 +16,7 @@ def _normalize_token(w: str) -> str:
     return w
 
 
-def create_entropy_map(data_sources, dataset_identifier, mode='books'):
+def create_entropy_map(data_sources, dataset_identifier, split, mode='books'):
     """
     Build an entropy map over normalized word forms.
     For English sources, use wordfreq probability proxy p and set entropy = -p*log2(p).
@@ -85,9 +85,9 @@ def load_data_pile(mode, train_val_pile, num_samples=100000):
         return data_sources
     
 #changed from tag&tabs implementation to use different datasets
-def create_entropy_map_func(dataset_identifier, mode="Dataset", train_val_pile="validation"):
+def create_entropy_map_func(dataset_identifier, mode="Dataset", train_val_pile="validation", split):
     if mode == 'Dataset':
-        data_sources = [load_dataset(dataset_identifier, split=f"train")]
+        data_sources = [load_dataset(dataset_identifier, split)]
     elif mode == 'PILE':
         data_sources = load_data_pile('PILE', train_val_pile, num_samples=100000)
     print("Creating entropy map...")

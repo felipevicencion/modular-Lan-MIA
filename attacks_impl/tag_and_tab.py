@@ -132,12 +132,13 @@ class AttackTagAndTab(ThresholdAttack):
     def run_attack(self, attack_dataset, membership_true, attack_options):
         trainer = attack_options['trainer']
         wdataset = attack_options['wdataset']
-
+        split = attack_options['split']
+        
         dataset_identifier = wdataset.dataset_name if wdataset.dataset_name is not None else wdataset.dataset_path
         print(f"Generating or fetching entropy map for: {dataset_identifier}...")
 
         #Get or load the entropy map
-        entropy_map = create_entropy_map_func(dataset_identifier, "Dataset", "validation")
+        entropy_map = create_entropy_map_func(dataset_identifier, "Dataset", "validation", split)
 
         try:
             nlp_spacy = spacy.load("en_core_web_sm")
