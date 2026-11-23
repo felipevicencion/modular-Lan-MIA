@@ -39,7 +39,8 @@ def create_entropy_map(data_sources, dataset_identifier, mode='books'):
         source = dataset_identifier if dataset_identifier is not None else data_sources
         db_data = load_dataset(source, split="train") if isinstance(source, str) else source
         for item in db_data:
-            add_text(item['snippet'])
+            text = item.get('text') if 'text' in item else item.get('snippet', '')
+            add_text(text)
     else:
         # fallback: assume iterable of dicts with 'text'
         for item in (data_sources or []):
