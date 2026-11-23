@@ -51,18 +51,6 @@ class AttackTagAndTab(ThresholdAttack):
     def compute_tag_scores(self, eval_dataset, trainer, entropy_map, nlp_spacy, tokenizer):
         scores = []
         model = trainer.model
-        tokenizer = (
-            getattr(trainer, "processing_class", None)
-            or getattr(trainer, "tokenizer", None)
-            or getattr(wdataset, "tokenizer", None)
-        )
-        #tokenizer logging
-        tok_name = (
-            getattr(tokenizer, "name_or_path", None)
-            or getattr(getattr(tokenizer, "init_kwargs", {}), "get", lambda *_: None)("name_or_path")
-            or "unknown"
-        )
-        print(f"[tag_and_tab] Using tokenizer: {type(tokenizer).__name__} ({tok_name})")
 
         model.eval()
 
