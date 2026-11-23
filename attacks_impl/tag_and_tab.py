@@ -171,7 +171,14 @@ class AttackTagAndTab(ThresholdAttack):
             tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         scores = self.compute_tag_scores(attack_dataset, trainer, entropy_map, nlp_spacy, tokenizer=tokenizer)
-        self.membership_pred = self.thresholds_comp(scores, self.score_thr)
+        
+        if self.num_score_thr and self.num_score_thr > 0 and len(scores) > 0:
+            thrs = torch.linspace(min(scores), max(scores), steps=self.num_score_thr).tolist()
+            self.score_thr = thrs
+        else:
+            thrs = self.score_thr
+
+        self.membership_pred = self.thresholds_comp(scores, thrs, direction="ge")
         self.plot_roc_curves(
             self.membership_pred,
             membership_true,
