@@ -56,7 +56,7 @@ class AttackTagAndTab(ThresholdAttack):
 
         for item in eval_dataset:
             if "input_ids" in item:
-                text = trainer.tokenizer.decode(item["input_ids"], skip_special_tokens=True)
+                text = tokenizer.decode(item["input_ids"], skip_special_tokens=True)
             else:
                 text = item.get("text", "")
             if not text:
