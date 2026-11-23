@@ -136,10 +136,17 @@ def tokenize_data(tokenizer, data, max_sequence_length):
     if all(col in data.column_names for col in ['input_ids', 'attention_mask']):
         return data  # Return as is if already tokenized
 
-    tokenize_data = lambda batch: tokenizer(batch['text'], max_length=max_sequence_length, padding=True, truncation=True)
-    data = data.map(tokenize_data, batched=True, batch_size=len(data))
-    # data = data.remove_columns(['text']) # some of the attacks need access to original text
-    data.set_format('torch', columns=['input_ids', 'attention_mask', 'label', 'text'])
+    #update, allowing snippet based datasets
+    text_col = "text" if "text" in data.column_names else ("snippet" if "snippet" in data.column_names else None)
+    if text_col is None:
+        raise KeyError(f"Expected 'text' or 'snippet' in dataset columns, got: {data.column_names}")
+    
+    map_fn = lambda batch: tokenizer(batch[text_col], max_length=max_sequence_length, padding=True, truncation=True)
+    data = data.map(map_fn, batched=True, batch_size=len(data))
+    
+    desired_cols = ['input_ids', 'attention_mask', 'label', text_col]
+    existing_cols = [col for col in desired_cols if col in data.column_names]
+    data.set_format('torch', columns=existing_cols)
     return data
 
 def capitalize_after_underscore(input_string):
